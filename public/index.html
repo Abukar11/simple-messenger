@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Простой Мессенджер</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 800px;
+            height: 90vh;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #2196F3;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .status {
+            background: #f5f5f5;
+            padding: 10px 20px;
+            text-align: center;
+            color: #666;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #fafafa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 70%;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .message.my {
+            background: #2196F3;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .message.other {
+            background: white;
+            border: 1px solid #e0e0e0;
+        }
+
+        .message-username {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            opacity: 0.7;
+        }
+
+        .message-text {
+            font-size: 16px;
+            line-height: 1.4;
+        }
+
+        .message-time {
+            font-size: 11px;
+            margin-top: 5px;
+            opacity: 0.7;
+        }
+
+        .input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-field {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-field:focus {
+            border-color: #2196F3;
+        }
+
+        .send-button {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background: #2196F3;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .send-button:hover {
+            background: #1976D2;
+        }
+
+        .send-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .login-container {
+            max-width: 400px;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 18px;
+            text-align: center;
+            margin: 20px 0;
+            outline: none;
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 15px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .login-button:hover {
+            background: #1976D2;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                height: 100vh;
+                border-radius: 0;
+            }
+            
+            .message {
+                max-width: 85%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        function App() {
+            const [currentUser, setCurrentUser] = useState('');
+            const [isLoggedIn, setIsLoggedIn] = useState(false);
+            const [messages, setMessages] = useState([]);
+            const [messageText, setMessageText] = useState('');
+            const [userCount, setUserCount] = useState(0);
+            const [isConnected, setIsConnected] = useState(false);
+            
+            const socketRef = useRef(null);
+            const messagesEndRef = useRef(null);
+
+            useEffect(() => {
+                // Подключение к серверу
+                socketRef.current = io();
+                
+                socketRef.current.on('connect', () => {
+                    console.log('Подключен к серверу');
+                    setIsConnected(true);
+                });
+
+                socketRef.current.on('disconnect', () => {
+                    console.log('Отключен от сервера');
+                    setIsConnected(false);
+                });
+
+                socketRef.current.on('messageHistory', (history) => {
+                    setMessages(history);
+                });
+
+                socketRef.current.on('newMessage', (message) => {
+                    setMessages(prev => [...prev, message]);
+                });
+
+                socketRef.current.on('userJoined', (data) => {
+                    setUserCount(data.userCount);
+                });
+
+                socketRef.current.on('userLeft', (data) => {
+                    setUserCount(data.userCount);
+                });
+
+                socketRef.current.on('joinSuccess', (data) => {
+                    setUserCount(data.userCount);
+                });
+
+                return () => {
+                    if (socketRef.current) {
+                        socketRef.current.disconnect();
+                    }
+                };
+            }, []);
+
+            useEffect(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, [messages]);
+
+            const handleLogin = (username) => {
+                if (username.trim()) {
+                    setCurrentUser(username.trim());
+                    setIsLoggedIn(true);
+                    socketRef.current.emit('userJoin', username.trim());
+                }
+            };
+
+            const sendMessage = () => {
+                if (messageText.trim() && isConnected) {
+                    socketRef.current.emit('sendMessage', {
+                        username: currentUser,
+                        text: messageText.trim(),
+                    });
+                    setMessageText('');
+                }
+            };
+
+            const handleKeyPress = (e) => {
+                if (e.key === 'Enter') {
+                    if (isLoggedIn) {
+                        sendMessage();
+                    } else {
+                        handleLogin(e.target.value);
+                    }
+                }
+            };
+
+            if (!isLoggedIn) {
+                return (
+                    <div className="app-container">
+                        <div className="login-container">
+                            <h1>🚀 Простой Мессенджер</h1>
+                            <p style={{color: '#666', margin: '20px 0'}}>
+                                Введите ваше имя для входа в чат
+                            </p>
+                            <input
+                                type="text"
+                                placeholder="Ваше имя..."
+                                className="login-input"
+                                onKeyPress={handleKeyPress}
+                                maxLength={20}
+                            />
+                            <div style={{fontSize: '14px', color: '#999'}}>
+                                {isConnected ? '🟢 Подключено к серверу' : '🔴 Подключение...'}
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="app-container">
+                    <div className="header">
+                        <h1>🚀 Простой Мессенджер</h1>
+                        <div>Добро пожаловать, {currentUser}!</div>
+                    </div>
+                    
+                    <div className="status">
+                        {isConnected ? `🟢 Онлайн • ${userCount} человек` : '🔴 Соединение...'}
+                    </div>
+
+                    <div className="messages-container">
+                        {messages.map((message) => (
+                            <div
+                                key={message.id}
+                                className={`message ${message.username === currentUser ? 'my' : 'other'}`}
+                            >
+                                {message.username !== currentUser && (
+                                    <div className="message-username">{message.username}</div>
+                                )}
+                                <div className="message-text">{message.text}</div>
+                                <div className="message-time">{message.time}</div>
+                            </div>
+                        ))}
+                        <div ref={messagesEndRef} />
+                    </div>
+
+                    <div className="input-container">
+                        <input
+                            type="text"
+                            placeholder="Введите сообщение..."
+                            value={messageText}
+                            onChange={(e) => setMessageText(e.target.value)}
+                            onKeyPress={handleKeyPress}
+                            className="input-field"
+                            maxLength={500}
+                        />
+                        <button
+                            onClick={sendMessage}
+                            disabled={!messageText.trim() || !isConnected}
+                            className="send-button"
+                        >
+                            ➤
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
