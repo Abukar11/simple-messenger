@@ -2,7 +2,13 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 
-const app = express();
+const a                            ${messages.map(msg => `
+                                <div class="message ${msg.username === currentUser ? 'my' : 'other'}">
+                                    ${msg.username !== currentUser ? `<div class="username" style="color: ${getUserColor(msg.username)}">${msg.username}</div>` : ''}
+                                    <div class="text">${msg.text}</div>
+                                    <div class="time">${msg.time}</div>
+                                </div>
+                            `).join('')}press();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
@@ -56,13 +62,13 @@ app.get('/', (req, res) => {
         .message { margin-bottom: 15px; padding: 12px 16px; border-radius: 18px; max-width: 70%; animation: fadeIn 0.3s ease-in; }
         .message.my { background: #2196F3; color: white; margin-left: auto; text-align: right; }
         .message.other { background: white; border: 1px solid #e0e0e0; }
-        .username { font-size: 12px; font-weight: bold; margin-bottom: 5px; opacity: 0.8; }
+        .username { font-size: 12px; font-weight: bold; margin-bottom: 5px; opacity: 0.7; }
         .text { font-size: 16px; line-height: 1.4; }
         .time { font-size: 11px; margin-top: 5px; opacity: 0.7; }
-        .input-area { padding: 20px; background: white; border-top: 1px solid #e0e0e0; display: flex; gap: 5px; align-items: center; }
+        .input-area { padding: 20px; background: white; border-top: 1px solid #e0e0e0; display: flex; gap: 10px; }
         .input { flex: 1; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 25px; font-size: 16px; outline: none; }
         .input:focus { border-color: #2196F3; }
-        .emoji-btn { width: 40px; height: 40px; border: none; background: #f0f0f0; border-radius: 50%; font-size: 18px; cursor: pointer; transition: background 0.2s; }
+        .emoji-btn { width: 40px; height: 40px; border: none; background: #f0f0f0; border-radius: 50%; font-size: 18px; cursor: pointer; margin-right: 5px; }
         .emoji-btn:hover { background: #e0e0e0; }
         .send { width: 50px; height: 50px; border-radius: 50%; border: none; background: #2196F3; color: white; font-size: 20px; cursor: pointer; }
         .send:hover { background: #1976D2; }
@@ -83,15 +89,6 @@ app.get('/', (req, res) => {
         let messages = [];
         let userCount = 0;
         let isConnected = false;
-
-        function getUserColor(username) {
-            const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F'];
-            let hash = 0;
-            for (let i = 0; i < username.length; i++) {
-                hash = username.charCodeAt(i) + ((hash << 5) - hash);
-            }
-            return colors[Math.abs(hash) % colors.length];
-        }
 
         function render() {
             const app = document.getElementById('app');
@@ -122,7 +119,7 @@ app.get('/', (req, res) => {
                         <div class="messages" id="messages">
                             \${messages.map(msg => \`
                                 <div class="message \${msg.username === currentUser ? 'my' : 'other'}">
-                                    \${msg.username !== currentUser ? \`<div class="username" style="color: \${getUserColor(msg.username)}">\${msg.username}</div>\` : ''}
+                                    \${msg.username !== currentUser ? \`<div class="username">\${msg.username}</div>\` : ''}
                                     <div class="text">\${msg.text}</div>
                                     <div class="time">\${msg.time}</div>
                                 </div>
@@ -177,6 +174,15 @@ app.get('/', (req, res) => {
                 input.value += emoji;
                 input.focus();
             }
+        }
+
+        function getUserColor(username) {
+            const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F'];
+            let hash = 0;
+            for (let i = 0; i < username.length; i++) {
+                hash = username.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            return colors[Math.abs(hash) % colors.length];
         }
 
         function scrollToBottom() {
