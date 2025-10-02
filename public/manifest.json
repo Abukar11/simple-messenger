@@ -1,6 +1,6 @@
 {
-  "name": "Простой Мессенджер",
-  "short_name": "Мессенджер",
+  "name": "Raven Chat",
+  "short_name": "Raven",
   "description": "Real-time чат с эмодзи и красивым дизайном",
   "start_url": "/",
   "display": "standalone",

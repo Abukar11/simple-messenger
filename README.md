@@ -1,4 +1,4 @@
-# 🚀 Simple Messenger
+# �‍⬛ Raven Chat
 
 Быстрый real-time чат с Socket.IO и красивым интерфейсом.
 

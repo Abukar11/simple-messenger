@@ -1,4 +1,4 @@
-const CACHE_NAME = 'simple-messenger-v1';
+const CACHE_NAME = 'raven-chat-v1';
 const urlsToCache = [
   '/',
   '/manifest.json'
@@ -75,7 +75,7 @@ self.addEventListener('push', function(event) {
   };
 
   event.waitUntil(
-    self.registration.showNotification('Простой Мессенджер', options)
+    self.registration.showNotification('Raven Chat', options)
   );
 });
 

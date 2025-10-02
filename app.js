@@ -38,7 +38,7 @@ app.get('/', (req, res) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🚀 Простой Мессенджер</title>
+    <title>�‍⬛ Raven Chat</title>
     
     <!-- PWA мета-теги -->
     <link rel="manifest" href="/manifest.json">
@@ -109,7 +109,7 @@ app.get('/', (req, res) => {
                 app.innerHTML = \`
                     <div class="app">
                         <div class="login">
-                            <h1>🚀 Простой Мессенджер</h1>
+                            <h1>�‍⬛ Raven Chat</h1>
                             <p style="color: #666; margin: 20px 0;">Введите ваше имя для входа в чат</p>
                             <input type="text" placeholder="Ваше имя..." maxlength="20" onkeypress="handleLogin(event)">
                             <div style="font-size: 14px; color: #999;">
@@ -122,7 +122,7 @@ app.get('/', (req, res) => {
                 app.innerHTML = \`
                     <div class="app">
                         <div class="header">
-                            <h1>🚀 Простой Мессенджер</h1>
+                            <h1>�‍⬛ Raven Chat</h1>
                             <div>Добро пожаловать, \${currentUser}!</div>
                         </div>
                         <div class="status">

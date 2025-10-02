@@ -1,7 +1,7 @@
 {
-  "name": "simple-messenger-deploy",
+  "name": "raven-chat-deploy",
   "version": "1.0.0",
-  "description": "Простой мессенджер с Socket.IO для деплоя",
+  "description": "Raven Chat - стильный мессенджер с Socket.IO",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
@@ -15,6 +15,6 @@
     "node": ">=16.0.0"
   },
   "keywords": ["messenger", "chat", "socket.io", "realtime"],
-  "author": "Simple Messenger",
+  "author": "Raven Chat",
   "license": "MIT"
 }
