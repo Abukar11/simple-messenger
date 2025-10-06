@@ -1,0 +1,71 @@
+{
+    "React Navigation Setup": {
+        "prefix": "rnav",
+        "body": [
+            "import { NavigationContainer } from '@react-navigation/native';",
+            "import { createStackNavigator } from '@react-navigation/stack';",
+            "",
+            "const Stack = createStackNavigator();",
+            "",
+            "export default function App() {",
+            "  return (",
+            "    <NavigationContainer>",
+            "      <Stack.Navigator>",
+            "        $0",
+            "      </Stack.Navigator>",
+            "    </NavigationContainer>",
+            "  );",
+            "}"
+        ],
+        "description": "React Navigation setup для мессенджера"
+    },
+    
+    "Socket.io Server": {
+        "prefix": "socketserver",
+        "body": [
+            "const express = require('express');",
+            "const http = require('http');", 
+            "const socketIo = require('socket.io');",
+            "",
+            "const app = express();",
+            "const server = http.createServer(app);",
+            "const io = socketIo(server);",
+            "",
+            "io.on('connection', (socket) => {",
+            "  console.log('Пользователь подключился');",
+            "  $0",
+            "});",
+            "",
+            "server.listen(3000, () => {",
+            "  console.log('Сервер запущен на порту 3000');",
+            "});"
+        ],
+        "description": "Socket.io сервер для мессенджера"
+    },
+
+    "React Native Screen": {
+        "prefix": "rnscreen",
+        "body": [
+            "import React, { useState } from 'react';",
+            "import { View, Text, StyleSheet } from 'react-native';",
+            "",
+            "export default function ${1:ScreenName}({ navigation }) {",
+            "  return (",
+            "    <View style={styles.container}>",
+            "      <Text>${2:Screen Content}</Text>",
+            "      $0",
+            "    </View>",
+            "  );",
+            "}",
+            "",
+            "const styles = StyleSheet.create({",
+            "  container: {",
+            "    flex: 1,",
+            "    backgroundColor: '#f5f5f5',",
+            "    padding: 20,",
+            "  },",
+            "});"
+        ],
+        "description": "Шаблон экрана React Native"
+    }
+}

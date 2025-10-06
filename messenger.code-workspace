@@ -1,0 +1,89 @@
+{
+  "folders": [
+    {
+      "name": "📱 Мессенджер - Основной проект",
+      "path": "."
+    },
+    {
+      "name": "📋 Коды для просмотра",
+      "path": "./code-examples"
+    }
+  ],
+  "settings": {
+    "workbench.colorTheme": "Default Dark+",
+    "editor.fontSize": 14,
+    "editor.wordWrap": "on",
+    "files.autoSave": "afterDelay",
+    "explorer.confirmDelete": false,
+    "terminal.integrated.fontSize": 13,
+    "workbench.startupEditor": "welcomePage"
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-vscode.vscode-typescript-next",
+      "bradlc.vscode-tailwindcss",
+      "ms-vscode.vscode-json",
+      "ms-vscode.hexeditor",
+      "ms-vscode.live-server"
+    ]
+  },
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "🚀 Запуск Backend",
+        "type": "node",
+        "request": "launch",
+        "program": "${workspaceFolder}/backend/server.js",
+        "console": "integratedTerminal",
+        "env": {
+          "NODE_ENV": "development"
+        }
+      }
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "🖥️ Запуск Backend",
+        "type": "shell",
+        "command": "cd backend && npm start",
+        "group": "build",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "new",
+          "showReuseMessage": true,
+          "clear": false
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "📱 Запуск Mobile App",
+        "type": "shell",
+        "command": "cd mobile && npx expo start",
+        "group": "build",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "new",
+          "showReuseMessage": true,
+          "clear": false
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "🚀 Запуск всего проекта",
+        "dependsOrder": "parallel",
+        "dependsOn": [
+          "🖥️ Запуск Backend",
+          "📱 Запуск Mobile App"
+        ],
+        "group": "build"
+      }
+    ]
+  }
+}

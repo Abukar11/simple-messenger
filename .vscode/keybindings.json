@@ -1,0 +1,8 @@
+[
+    {
+        "command": "workbench.action.tasks.runTask", 
+        "args": "📖 Открыть все коды",
+        "key": "cmd+shift+o",
+        "when": "inFolder"
+    }
+]

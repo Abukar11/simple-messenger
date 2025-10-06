@@ -1,0 +1,72 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "📖 Открыть все коды",
+      "type": "shell",
+      "command": "code",
+      "args": [
+        "CODES/App.js",
+        "CODES/server.js", 
+        "CODES/LoginScreen.js",
+        "CODES/ChatScreen.js",
+        "CODES/README.md"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🖥️ Запуск Backend",
+      "type": "shell",
+      "command": "npm start",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "📱 Запуск Mobile App", 
+      "type": "shell",
+      "command": "npx expo start",
+      "options": {
+        "cwd": "${workspaceFolder}/mobile"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always", 
+        "focus": false,
+        "panel": "new",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "🚀 Запуск всего проекта",
+      "dependsOrder": "parallel",
+      "dependsOn": [
+        "🖥️ Запуск Backend",
+        "📱 Запуск Mobile App"
+      ],
+      "group": "build"
+    }
+  ]
+}

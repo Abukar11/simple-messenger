@@ -1,0 +1,16 @@
+{
+  "name": "simple-messenger",
+  "version": "1.0.0",
+  "description": "Простой мессенджер с Socket.IO",
+  "main": "final-server.js",
+  "scripts": {
+    "start": "node final-server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.0",
+    "socket.io": "^4.6.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
