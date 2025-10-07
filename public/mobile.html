@@ -425,6 +425,16 @@
                 padding: 10px;
             }
 
+            .input-row {
+                gap: 8px;
+            }
+
+            .emoji-toggle, .voice-button, .send-button {
+                width: 45px;
+                height: 45px;
+                font-size: 18px;
+            }
+
             .emoji-panel {
                 max-height: 120px;
             }
@@ -658,30 +668,25 @@
 
             const sendVoiceMessage = async (audioBlob) => {
                 try {
-                    const formData = new FormData();
-                    formData.append('voice', audioBlob, 'voice-message.webm');
-
-                    const response = await fetch('/api/upload-voice', {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    const result = await response.json();
-                    
-                    if (result.success) {
+                    // Конвертируем аудио в base64
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        const audioData = reader.result;
                         const currentTime = new Date().toLocaleTimeString('ru-RU', {
                             hour: '2-digit',
                             minute: '2-digit'
                         });
                         
+                        // Отправляем через Socket.io с base64 данными
                         socketRef.current.emit('sendMessage', {
                             username: currentUser,
                             text: '🎤 Голосовое сообщение',
-                            audioUrl: result.audioUrl,
+                            audioData: audioData, // base64 аудио
                             time: currentTime,
                             type: 'voice'
                         });
-                    }
+                    };
+                    reader.readAsDataURL(audioBlob);
                 } catch (error) {
                     console.error('Ошибка отправки голосового сообщения:', error);
                     alert('Ошибка отправки голосового сообщения');
@@ -702,22 +707,27 @@
 
             const stopRecording = () => {
                 if (mediaRecorder && isRecording) {
+                    mediaRecorder.onstop = () => {
+                        // Останавливаем все аудио треки
+                        if (mediaRecorder.stream) {
+                            mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                        }
+                        
+                        // Отправляем сообщение
+                        setAudioChunks(prevChunks => {
+                            if (prevChunks.length > 0) {
+                                const audioBlob = new Blob(prevChunks, { type: 'audio/webm' });
+                                sendVoiceMessage(audioBlob);
+                            }
+                            return [];
+                        });
+                        
+                        setRecordingTime(0);
+                    };
+                    
                     mediaRecorder.stop();
                     setIsRecording(false);
                     clearInterval(recordingIntervalRef.current);
-                    
-                    // Останавливаем все аудио треки
-                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
-                    
-                    // Ждем немного и отправляем
-                    setTimeout(() => {
-                        if (audioChunks.length > 0) {
-                            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                            sendVoiceMessage(audioBlob);
-                            setAudioChunks([]);
-                            setRecordingTime(0);
-                        }
-                    }, 100);
                 }
             };
 
@@ -845,12 +855,12 @@
                                 )}
                                 
                                 {/* Голосовое сообщение */}
-                                {message.type === 'voice' && message.audioUrl && (
+                                {message.type === 'voice' && (message.audioUrl || message.audioData) && (
                                     <div className="voice-message">
                                         <div className="voice-player">
                                             <button 
                                                 className="voice-play-btn"
-                                                onClick={() => playVoiceMessage(message.audioUrl)}
+                                                onClick={() => playVoiceMessage(message.audioData || message.audioUrl)}
                                                 title="Воспроизвести"
                                             >
                                                 ▶️
