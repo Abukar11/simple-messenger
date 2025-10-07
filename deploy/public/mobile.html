@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>�‍⬛ Raven</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 800px;
+            height: 90vh;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #2196F3;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .status {
+            background: #f5f5f5;
+            padding: 10px 20px;
+            text-align: center;
+            color: #666;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #fafafa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 70%;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .message.my {
+            background: #2196F3;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .message.other {
+            background: white;
+            border: 1px solid #e0e0e0;
+        }
+
+        .message-username {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            opacity: 0.7;
+        }
+
+        .message-text {
+            font-size: 16px;
+            line-height: 1.4;
+        }
+
+        .message-time {
+            font-size: 11px;
+            margin-top: 5px;
+            opacity: 0.7;
+        }
+
+        .input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .emoji-panel {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 15px;
+            border: 1px solid #e0e0e0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+            animation: slideDown 0.2s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .emoji-button {
+            font-size: 24px;
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .emoji-button:hover {
+            background: #e0e0e0;
+            transform: scale(1.2);
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .emoji-toggle {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: 2px solid #e0e0e0;
+            background: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .emoji-toggle:hover {
+            background: #f5f5f5;
+            border-color: #2196F3;
+            transform: scale(1.05);
+        }
+
+        .input-field {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-field:focus {
+            border-color: #188ff1;
+        }
+
+        .send-button {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background: #2196F3;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .send-button:hover {
+            background: #1976D2;
+        }
+
+        .send-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Стили для голосовых сообщений */
+        .voice-button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .voice-button:hover {
+            background: #45a049;
+            transform: scale(1.1);
+        }
+
+        .voice-button.recording {
+            background: #f44336;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .voice-recording-panel {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .voice-timer {
+            font-weight: bold;
+            color: #856404;
+            font-size: 18px;
+        }
+
+        .voice-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .voice-control-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .voice-send-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .voice-cancel-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .voice-control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .voice-message {
+            background: #e3f2fd;
+            border: 1px solid #2196F3;
+            border-radius: 15px;
+            padding: 10px;
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .voice-player {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .voice-play-btn {
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .voice-play-btn:hover {
+            background: #1976D2;
+            transform: scale(1.1);
+        }
+
+        .voice-duration {
+            font-size: 12px;
+            color: #666;
+            min-width: 40px;
+        }
+
+        .voice-waveform {
+            flex: 1;
+            height: 30px;
+            background: #f0f0f0;
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .voice-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #2196F3, #21CBF3);
+            border-radius: 15px;
+            transition: width 0.1s;
+        }
+
+        .login-container {
+            max-width: 400px;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #868686;
+            border-radius: 25px;
+            font-size: 18px;
+            text-align: center;
+            margin: 20px 0;
+            outline: none;
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 15px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .login-button:hover {
+            background: #1976D2;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                height: 100vh;
+                border-radius: 0;
+            }
+
+            .message {
+                max-width: 85%;
+            }
+        }
+
+        /* Стили для индикатора печати */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            background: rgba(33, 150, 243, 0.1);
+            border-radius: 20px;
+            margin: 5px 0;
+            font-size: 14px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .typing-dots {
+            margin-right: 10px;
+        }
+
+        .typing-animation {
+            display: flex;
+            gap: 3px;
+        }
+
+        .typing-animation span {
+            width: 6px;
+            height: 6px;
+            background: #2196F3;
+            border-radius: 50%;
+            animation: typingBounce 1.4s infinite ease-in-out;
+        }
+
+        .typing-animation span:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+
+        .typing-animation span:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+
+        @keyframes typingBounce {
+
+            0%,
+            80%,
+            100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        function App() {
+            const [currentUser, setCurrentUser] = useState('');
+            const [isLoggedIn, setIsLoggedIn] = useState(false);
+            const [messages, setMessages] = useState([]);
+            const [messageText, setMessageText] = useState('');
+            const [userCount, setUserCount] = useState(0);
+            const [isConnected, setIsConnected] = useState(false);
+            const [typingUsers, setTypingUsers] = useState([]);
+            const [showEmojiPanel, setShowEmojiPanel] = useState(false);
+            
+            // State для голосовых сообщений
+            const [isRecording, setIsRecording] = useState(false);
+            const [recordingTime, setRecordingTime] = useState(0);
+            const [mediaRecorder, setMediaRecorder] = useState(null);
+            const [audioChunks, setAudioChunks] = useState([]);
+            const [playingAudio, setPlayingAudio] = useState(null);
+
+            const socketRef = useRef(null);
+            const messagesEndRef = useRef(null);
+            const typingTimeoutRef = useRef(null);
+            const recordingIntervalRef = useRef(null);
+
+            // Список популярных эмодзи
+            const emojis = ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '😤', '😠', '😡', '🤬', '😱', '😨', '😰', '😥', '😢', '🤔', '🤗', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '👍', '👎', '👌', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '👇', '☝️', '✋', '🤚', '🖐️', '🖖', '👋', '🤏', '💪', '🦾', '🙏', '✍️', '💅', '🤳', '💃', '🕺', '👯', '🧗', '🏇', '⛷️', '🏂', '🏌️', '🏄', '🚣', '🏊', '⛹️', '🏋️', '🚴', '🚵', '🤸', '🤼', '🤽', '🤾', '🤹', '🧘', '🛀', '🛌', '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '🔥', '✨', '💫', '⭐', '🌟', '💥', '💯', '💢', '💨', '💤', '🕳️', '🎉', '🎊', '🙈', '🙉', '🙊', '💯', '💫', '⚡', '🔥', '💝', '🎁', '🎈', '🎀', '🎊', '🎉'];
+
+            // Функция для воспроизведения звука уведомления
+            const playNotificationSound = () => {
+                try {
+                    // Создаем звук уведомления с помощью Web Audio API
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+
+                    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                    oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.3);
+                } catch (error) {
+                    console.log('Звук недоступен:', error);
+                }
+            };
+
+            useEffect(() => {
+                // Подключение к серверу
+                socketRef.current = io();
+
+                socketRef.current.on('connect', () => {
+                    console.log('Подключен к серверу');
+                    setIsConnected(true);
+                });
+
+                socketRef.current.on('disconnect', () => {
+                    console.log('Отключен от сервера');
+                    setIsConnected(false);
+                });
+
+                socketRef.current.on('messageHistory', (history) => {
+                    setMessages(history);
+                });
+
+                socketRef.current.on('newMessage', (message) => {
+                    setMessages(prev => [...prev, message]);
+                    // Воспроизводим звук только если сообщение не от текущего пользователя
+                    if (message.username !== currentUser) {
+                        playNotificationSound();
+                    }
+                });
+
+                socketRef.current.on('userJoined', (data) => {
+                    setUserCount(data.userCount);
+                });
+
+                socketRef.current.on('userLeft', (data) => {
+                    setUserCount(data.userCount);
+                });
+
+                socketRef.current.on('userTyping', (data) => {
+                    setTypingUsers(prev => {
+                        if (!prev.includes(data.username) && data.username !== currentUser) {
+                            return [...prev, data.username];
+                        }
+                        return prev;
+                    });
+                });
+
+                socketRef.current.on('userStoppedTyping', (data) => {
+                    setTypingUsers(prev => prev.filter(user => user !== data.username));
+                });
+
+                socketRef.current.on('joinSuccess', (data) => {
+                    setUserCount(data.userCount);
+                });
+
+                return () => {
+                    if (socketRef.current) {
+                        socketRef.current.disconnect();
+                    }
+                };
+            }, []);
+
+            useEffect(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, [messages]);
+
+            const handleLogin = (username) => {
+                if (username.trim()) {
+                    setCurrentUser(username.trim());
+                    setIsLoggedIn(true);
+                    socketRef.current.emit('userJoin', username.trim());
+                }
+            };
+
+            const sendMessage = () => {
+                if (messageText.trim() && isConnected) {
+                    const currentTime = new Date().toLocaleTimeString('ru-RU', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    socketRef.current.emit('sendMessage', {
+                        username: currentUser,
+                        text: messageText.trim(),
+                        time: currentTime
+                    });
+                    setMessageText('');
+                    // Останавливаем индикатор печати при отправке сообщения
+                    socketRef.current.emit('stopTyping', { username: currentUser });
+                }
+            };
+
+            // Функции для голосовых сообщений
+            const startRecording = async () => {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    const recorder = new MediaRecorder(stream);
+                    
+                    setMediaRecorder(recorder);
+                    setAudioChunks([]);
+                    setIsRecording(true);
+                    setRecordingTime(0);
+
+                    // Запускаем таймер
+                    recordingIntervalRef.current = setInterval(() => {
+                        setRecordingTime(prev => prev + 1);
+                    }, 1000);
+
+                    recorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            setAudioChunks(prev => [...prev, event.data]);
+                        }
+                    };
+
+                    recorder.start();
+                } catch (error) {
+                    console.error('Ошибка доступа к микрофону:', error);
+                    alert('Не удалось получить доступ к микрофону');
+                }
+            };
+
+            const sendVoiceMessage = async (audioBlob) => {
+                try {
+                    const formData = new FormData();
+                    formData.append('voice', audioBlob, 'voice-message.webm');
+
+                    const response = await fetch('/api/upload-voice', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        const currentTime = new Date().toLocaleTimeString('ru-RU', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        
+                        socketRef.current.emit('sendMessage', {
+                            username: currentUser,
+                            text: '🎤 Голосовое сообщение',
+                            audioUrl: result.audioUrl,
+                            time: currentTime,
+                            type: 'voice'
+                        });
+                    }
+                } catch (error) {
+                    console.error('Ошибка отправки голосового сообщения:', error);
+                    alert('Ошибка отправки голосового сообщения');
+                }
+            };
+
+            const handleVoiceSend = () => {
+                if (audioChunks.length > 0) {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    sendVoiceMessage(audioBlob);
+                    setAudioChunks([]);
+                    setRecordingTime(0);
+                } else {
+                    // Если нет данных, останавливаем запись и отправляем
+                    stopRecording();
+                }
+            };
+
+            const stopRecording = () => {
+                if (mediaRecorder && isRecording) {
+                    mediaRecorder.stop();
+                    setIsRecording(false);
+                    clearInterval(recordingIntervalRef.current);
+                    
+                    // Останавливаем все аудио треки
+                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                    
+                    // Ждем немного и отправляем
+                    setTimeout(() => {
+                        if (audioChunks.length > 0) {
+                            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                            sendVoiceMessage(audioBlob);
+                            setAudioChunks([]);
+                            setRecordingTime(0);
+                        }
+                    }, 100);
+                }
+            };
+
+            const handleVoiceCancel = () => {
+                setAudioChunks([]);
+                setRecordingTime(0);
+                setIsRecording(false);
+                clearInterval(recordingIntervalRef.current);
+                
+                if (mediaRecorder) {
+                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                }
+            };
+
+            const playVoiceMessage = (audioUrl) => {
+                if (playingAudio) {
+                    playingAudio.pause();
+                    setPlayingAudio(null);
+                }
+
+                const audio = new Audio(audioUrl);
+                audio.play();
+                setPlayingAudio(audio);
+
+                audio.onended = () => {
+                    setPlayingAudio(null);
+                };
+            };
+
+            const formatTime = (seconds) => {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins}:${secs.toString().padStart(2, '0')}`;
+            };
+
+            const handleInputChange = (e) => {
+                setMessageText(e.target.value);
+
+                // Отправляем событие начала печати
+                if (e.target.value.trim() && isConnected) {
+                    socketRef.current.emit('typing', { username: currentUser });
+
+                    // Очищаем предыдущий таймер
+                    if (typingTimeoutRef.current) {
+                        clearTimeout(typingTimeoutRef.current);
+                    }
+
+                    // Устанавливаем новый таймер для остановки печати
+                    typingTimeoutRef.current = setTimeout(() => {
+                        socketRef.current.emit('stopTyping', { username: currentUser });
+                    }, 1000); // Останавливаем через 1 секунду бездействия
+                } else {
+                    // Если поле пустое, останавливаем печать
+                    socketRef.current.emit('stopTyping', { username: currentUser });
+                }
+            };
+
+            const handleKeyPress = (e) => {
+                if (e.key === 'Enter') {
+                    if (isLoggedIn) {
+                        sendMessage();
+                    } else {
+                        handleLogin(e.target.value);
+                    }
+                }
+            };
+
+            // Функции для работы с эмодзи
+            const toggleEmojiPanel = () => {
+                setShowEmojiPanel(!showEmojiPanel);
+            };
+
+            const addEmoji = (emoji) => {
+                setMessageText(prev => prev + emoji);
+                setShowEmojiPanel(false); // Закрываем панель после выбора
+            };
+
+            if (!isLoggedIn) {
+                return (
+                    <div className="app-container">
+                        <div className="login-container">
+                            <h1>�‍⬛ Raven</h1>
+                            <p style={{color: '#666', margin: '20px 0'}}>
+                                Введите ваше имя для входа в чат
+                            </p>
+                            <input
+                                type="text"
+                                placeholder="Ваше имя..."
+                                className="login-input"
+                                onKeyPress={handleKeyPress}
+                                maxLength={20}
+                            />
+                            <div style={{fontSize: '14px', color: '#999'}}>
+                                {isConnected ? '🟢 Подключено к серверу' : '🔴 Подключение...'}
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="app-container">
+                    <div className="header">
+                        <h1>�‍⬛ Raven</h1>
+                        <div>Добро пожаловать, {currentUser}!</div>
+                    </div>
+                    
+                    <div className="status">
+                        {isConnected ? `🟢 Онлайн • ${userCount} человек` : '🔴 Соединение...'}
+                    </div>
+
+                    <div className="messages-container">
+                        {messages.map((message) => (
+                            <div
+                                key={message.id}
+                                className={`message ${message.username === currentUser ? 'my' : 'other'}`}
+                            >
+                                {message.username !== currentUser && (
+                                    <div className="message-username">{message.username}</div>
+                                )}
+                                
+                                {/* Обычное текстовое сообщение */}
+                                {message.type !== 'voice' && (
+                                    <div className="message-text">{message.text}</div>
+                                )}
+                                
+                                {/* Голосовое сообщение */}
+                                {message.type === 'voice' && message.audioUrl && (
+                                    <div className="voice-message">
+                                        <div className="voice-player">
+                                            <button 
+                                                className="voice-play-btn"
+                                                onClick={() => playVoiceMessage(message.audioUrl)}
+                                                title="Воспроизвести"
+                                            >
+                                                ▶️
+                                            </button>
+                                            <div className="voice-waveform">
+                                                <div className="voice-progress" style={{width: '0%'}}></div>
+                                            </div>
+                                            <span className="voice-duration">🎤</span>
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                <div className="message-time">{message.time}</div>
+                            </div>
+                        ))}
+                        
+                        {/* Индикатор печати */}
+                        {typingUsers.length > 0 && (
+                            <div className="typing-indicator">
+                                <span className="typing-dots">
+                                    {typingUsers.length === 1 
+                                        ? `${typingUsers[0]} печатает...` 
+                                        : `${typingUsers.length} пользователей печатают...`
+                                    }
+                                </span>
+                                <div className="typing-animation">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                            </div>
+                        )}
+                        
+                        <div ref={messagesEndRef} />
+                    </div>
+
+                    <div className="input-container">
+                        {/* Панель записи голосового сообщения */}
+                        {isRecording && (
+                            <div className="voice-recording-panel">
+                                <span>🎤 Запись голосового сообщения...</span>
+                                <span className="voice-timer">{formatTime(recordingTime)}</span>
+                                <div className="voice-controls">
+                                    <button 
+                                        className="voice-control-btn voice-send-btn"
+                                        onClick={handleVoiceSend}
+                                    >
+                                        Отправить
+                                    </button>
+                                    <button 
+                                        className="voice-control-btn voice-cancel-btn"
+                                        onClick={handleVoiceCancel}
+                                    >
+                                        Отменить
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Панель эмодзи */}
+                        {showEmojiPanel && (
+                            <div className="emoji-panel">
+                                {emojis.map((emoji, index) => (
+                                    <span 
+                                        key={index}
+                                        className="emoji-button"
+                                        onClick={() => addEmoji(emoji)}
+                                    >
+                                        {emoji}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                        
+                        {/* Строка ввода */}
+                        <div className="input-row">
+                            <button 
+                                className="emoji-toggle"
+                                onClick={toggleEmojiPanel}
+                                title="Добавить эмодзи"
+                            >
+                                😀
+                            </button>
+                            <input
+                                type="text"
+                                placeholder="Введите сообщение..."
+                                value={messageText}
+                                onChange={handleInputChange}
+                                onKeyPress={handleKeyPress}
+                                className="input-field"
+                                maxLength={500}
+                            />
+                            <button
+                                className={`voice-button ${isRecording ? 'recording' : ''}`}
+                                onClick={isRecording ? stopRecording : startRecording}
+                                title={isRecording ? "Остановить запись" : "Записать голосовое сообщение"}
+                            >
+                                🎤
+                            </button>
+                            <button
+                                onClick={sendMessage}
+                                disabled={!messageText.trim() || !isConnected}
+                                className="send-button"
+                            >
+                                ➤
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+
+</html>
