@@ -392,13 +392,41 @@
         }
 
         @media (max-width: 768px) {
+            body {
+                padding: 0;
+                margin: 0;
+            }
+
             .app-container {
                 height: 100vh;
+                max-width: 100%;
                 border-radius: 0;
+                margin: 0;
+            }
+
+            .header {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .messages-container {
+                padding: 10px;
             }
 
             .message {
-                max-width: 85%;
+                max-width: 80%;
+                font-size: 15px;
+            }
+
+            .input-container {
+                padding: 10px;
+            }
+
+            .emoji-panel {
+                max-height: 120px;
             }
         }
 
