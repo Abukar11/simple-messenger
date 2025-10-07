@@ -3,8 +3,11 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>�‍⬛ Raven</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#2196F3">
+    <title>🏠‍⬛ Raven</title>
     <script src="/socket.io/socket.io.js"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -19,10 +22,18 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            height: 100vh;
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
             display: flex;
             justify-content: center;
             align-items: center;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        html {
+            height: -webkit-fill-available;
         }
 
         .app-container {
@@ -395,17 +406,22 @@
             body {
                 padding: 0;
                 margin: 0;
+                align-items: stretch;
             }
 
             .app-container {
                 height: 100vh;
+                height: -webkit-fill-available;
                 max-width: 100%;
                 border-radius: 0;
                 margin: 0;
+                max-height: 100vh;
+                max-height: -webkit-fill-available;
             }
 
             .header {
                 padding: 15px;
+                padding-top: max(15px, env(safe-area-inset-top));
             }
 
             .header h1 {
@@ -414,6 +430,7 @@
 
             .messages-container {
                 padding: 10px;
+                padding-bottom: 5px;
             }
 
             .message {
@@ -423,6 +440,7 @@
 
             .input-container {
                 padding: 10px;
+                padding-bottom: max(10px, env(safe-area-inset-bottom));
             }
 
             .input-row {
@@ -433,10 +451,21 @@
                 width: 45px;
                 height: 45px;
                 font-size: 18px;
+                flex-shrink: 0;
+            }
+
+            .input-field {
+                font-size: 16px;
             }
 
             .emoji-panel {
                 max-height: 120px;
+            }
+
+            .voice-play-btn {
+                width: 35px;
+                height: 35px;
+                font-size: 16px;
             }
         }
 
@@ -682,6 +711,7 @@
                             username: currentUser,
                             text: '🎤 Голосовое сообщение',
                             audioData: audioData, // base64 аудио
+                            duration: formatTime(recordingTime), // длительность записи
                             time: currentTime,
                             type: 'voice'
                         });
@@ -743,18 +773,36 @@
             };
 
             const playVoiceMessage = (audioUrl) => {
-                if (playingAudio) {
-                    playingAudio.pause();
-                    setPlayingAudio(null);
+                try {
+                    if (playingAudio) {
+                        playingAudio.pause();
+                        setPlayingAudio(null);
+                        return;
+                    }
+
+                    const audio = new Audio(audioUrl);
+                    
+                    // Обработка ошибок загрузки
+                    audio.onerror = (e) => {
+                        console.error('Ошибка воспроизведения:', e);
+                        alert('Не удалось воспроизвести голосовое сообщение');
+                        setPlayingAudio(null);
+                    };
+
+                    audio.onended = () => {
+                        setPlayingAudio(null);
+                    };
+
+                    audio.play().catch(err => {
+                        console.error('Ошибка при запуске:', err);
+                        alert('Не удалось воспроизвести аудио');
+                    });
+                    
+                    setPlayingAudio(audio);
+                } catch (error) {
+                    console.error('Ошибка playVoiceMessage:', error);
+                    alert('Ошибка воспроизведения');
                 }
-
-                const audio = new Audio(audioUrl);
-                audio.play();
-                setPlayingAudio(audio);
-
-                audio.onended = () => {
-                    setPlayingAudio(null);
-                };
             };
 
             const formatTime = (seconds) => {
@@ -861,14 +909,14 @@
                                             <button 
                                                 className="voice-play-btn"
                                                 onClick={() => playVoiceMessage(message.audioData || message.audioUrl)}
-                                                title="Воспроизвести"
+                                                title={playingAudio ? "Остановить" : "Воспроизвести"}
                                             >
-                                                ▶️
+                                                {playingAudio ? '⏸️' : '▶️'}
                                             </button>
                                             <div className="voice-waveform">
-                                                <div className="voice-progress" style={{width: '0%'}}></div>
+                                                <div className="voice-progress" style={{width: playingAudio ? '100%' : '0%'}}></div>
                                             </div>
-                                            <span className="voice-duration">🎤</span>
+                                            <span className="voice-duration">🎤 {message.duration || '0:00'}</span>
                                         </div>
                                     </div>
                                 )}
