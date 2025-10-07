@@ -34,7 +34,7 @@ export default function App() {
           component={ChatScreen}
           options={({ route }) => ({ 
             title: `Общий чат - ${route.params?.username || 'Гость'}`,
-            headerLeft: null, // Убираем кнопку "Назад"
+            headerLeft: null,
           })}
         />
       </Stack.Navigator>

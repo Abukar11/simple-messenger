@@ -208,6 +208,144 @@
             cursor: not-allowed;
         }
 
+        /* Стили для голосовых сообщений */
+        .voice-button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .voice-button:hover {
+            background: #45a049;
+            transform: scale(1.1);
+        }
+
+        .voice-button.recording {
+            background: #f44336;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .voice-recording-panel {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .voice-timer {
+            font-weight: bold;
+            color: #856404;
+            font-size: 18px;
+        }
+
+        .voice-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .voice-control-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .voice-send-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .voice-cancel-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .voice-control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .voice-message {
+            background: #e3f2fd;
+            border: 1px solid #2196F3;
+            border-radius: 15px;
+            padding: 10px;
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .voice-player {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .voice-play-btn {
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .voice-play-btn:hover {
+            background: #1976D2;
+            transform: scale(1.1);
+        }
+
+        .voice-duration {
+            font-size: 12px;
+            color: #666;
+            min-width: 40px;
+        }
+
+        .voice-waveform {
+            flex: 1;
+            height: 30px;
+            background: #f0f0f0;
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .voice-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #2196F3, #21CBF3);
+            border-radius: 15px;
+            transition: width 0.1s;
+        }
+
         .login-container {
             max-width: 400px;
             padding: 40px;
@@ -334,10 +472,18 @@
             const [isConnected, setIsConnected] = useState(false);
             const [typingUsers, setTypingUsers] = useState([]);
             const [showEmojiPanel, setShowEmojiPanel] = useState(false);
+            
+            // State для голосовых сообщений
+            const [isRecording, setIsRecording] = useState(false);
+            const [recordingTime, setRecordingTime] = useState(0);
+            const [mediaRecorder, setMediaRecorder] = useState(null);
+            const [audioChunks, setAudioChunks] = useState([]);
+            const [playingAudio, setPlayingAudio] = useState(null);
 
             const socketRef = useRef(null);
             const messagesEndRef = useRef(null);
             const typingTimeoutRef = useRef(null);
+            const recordingIntervalRef = useRef(null);
 
             // Список популярных эмодзи
             const emojis = ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '😤', '😠', '😡', '🤬', '😱', '😨', '😰', '😥', '😢', '🤔', '🤗', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '👍', '👎', '👌', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '👇', '☝️', '✋', '🤚', '🖐️', '🖖', '👋', '🤏', '💪', '🦾', '🙏', '✍️', '💅', '🤳', '💃', '🕺', '👯', '🧗', '🏇', '⛷️', '🏂', '🏌️', '🏄', '🚣', '🏊', '⛹️', '🏋️', '🚴', '🚵', '🤸', '🤼', '🤽', '🤾', '🤹', '🧘', '🛀', '🛌', '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '🔥', '✨', '💫', '⭐', '🌟', '💥', '💯', '💢', '💨', '💤', '🕳️', '🎉', '🎊', '🙈', '🙉', '🙊', '💯', '💫', '⚡', '🔥', '💝', '🎁', '🎈', '🎀', '🎊', '🎉'];
@@ -453,6 +599,132 @@
                 }
             };
 
+            // Функции для голосовых сообщений
+            const startRecording = async () => {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    const recorder = new MediaRecorder(stream);
+                    
+                    setMediaRecorder(recorder);
+                    setAudioChunks([]);
+                    setIsRecording(true);
+                    setRecordingTime(0);
+
+                    // Запускаем таймер
+                    recordingIntervalRef.current = setInterval(() => {
+                        setRecordingTime(prev => prev + 1);
+                    }, 1000);
+
+                    recorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            setAudioChunks(prev => [...prev, event.data]);
+                        }
+                    };
+
+                    recorder.start();
+                } catch (error) {
+                    console.error('Ошибка доступа к микрофону:', error);
+                    alert('Не удалось получить доступ к микрофону');
+                }
+            };
+
+            const sendVoiceMessage = async (audioBlob) => {
+                try {
+                    const formData = new FormData();
+                    formData.append('voice', audioBlob, 'voice-message.webm');
+
+                    const response = await fetch('/api/upload-voice', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        const currentTime = new Date().toLocaleTimeString('ru-RU', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        
+                        socketRef.current.emit('sendMessage', {
+                            username: currentUser,
+                            text: '🎤 Голосовое сообщение',
+                            audioUrl: result.audioUrl,
+                            time: currentTime,
+                            type: 'voice'
+                        });
+                    }
+                } catch (error) {
+                    console.error('Ошибка отправки голосового сообщения:', error);
+                    alert('Ошибка отправки голосового сообщения');
+                }
+            };
+
+            const handleVoiceSend = () => {
+                if (audioChunks.length > 0) {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    sendVoiceMessage(audioBlob);
+                    setAudioChunks([]);
+                    setRecordingTime(0);
+                } else {
+                    // Если нет данных, останавливаем запись и отправляем
+                    stopRecording();
+                }
+            };
+
+            const stopRecording = () => {
+                if (mediaRecorder && isRecording) {
+                    mediaRecorder.stop();
+                    setIsRecording(false);
+                    clearInterval(recordingIntervalRef.current);
+                    
+                    // Останавливаем все аудио треки
+                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                    
+                    // Ждем немного и отправляем
+                    setTimeout(() => {
+                        if (audioChunks.length > 0) {
+                            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                            sendVoiceMessage(audioBlob);
+                            setAudioChunks([]);
+                            setRecordingTime(0);
+                        }
+                    }, 100);
+                }
+            };
+
+            const handleVoiceCancel = () => {
+                setAudioChunks([]);
+                setRecordingTime(0);
+                setIsRecording(false);
+                clearInterval(recordingIntervalRef.current);
+                
+                if (mediaRecorder) {
+                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                }
+            };
+
+            const playVoiceMessage = (audioUrl) => {
+                if (playingAudio) {
+                    playingAudio.pause();
+                    setPlayingAudio(null);
+                }
+
+                const audio = new Audio(audioUrl);
+                audio.play();
+                setPlayingAudio(audio);
+
+                audio.onended = () => {
+                    setPlayingAudio(null);
+                };
+            };
+
+            const formatTime = (seconds) => {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins}:${secs.toString().padStart(2, '0')}`;
+            };
+
             const handleInputChange = (e) => {
                 setMessageText(e.target.value);
 
@@ -538,7 +810,31 @@
                                 {message.username !== currentUser && (
                                     <div className="message-username">{message.username}</div>
                                 )}
-                                <div className="message-text">{message.text}</div>
+                                
+                                {/* Обычное текстовое сообщение */}
+                                {message.type !== 'voice' && (
+                                    <div className="message-text">{message.text}</div>
+                                )}
+                                
+                                {/* Голосовое сообщение */}
+                                {message.type === 'voice' && message.audioUrl && (
+                                    <div className="voice-message">
+                                        <div className="voice-player">
+                                            <button 
+                                                className="voice-play-btn"
+                                                onClick={() => playVoiceMessage(message.audioUrl)}
+                                                title="Воспроизвести"
+                                            >
+                                                ▶️
+                                            </button>
+                                            <div className="voice-waveform">
+                                                <div className="voice-progress" style={{width: '0%'}}></div>
+                                            </div>
+                                            <span className="voice-duration">🎤</span>
+                                        </div>
+                                    </div>
+                                )}
+                                
                                 <div className="message-time">{message.time}</div>
                             </div>
                         ))}
@@ -564,6 +860,28 @@
                     </div>
 
                     <div className="input-container">
+                        {/* Панель записи голосового сообщения */}
+                        {isRecording && (
+                            <div className="voice-recording-panel">
+                                <span>🎤 Запись голосового сообщения...</span>
+                                <span className="voice-timer">{formatTime(recordingTime)}</span>
+                                <div className="voice-controls">
+                                    <button 
+                                        className="voice-control-btn voice-send-btn"
+                                        onClick={handleVoiceSend}
+                                    >
+                                        Отправить
+                                    </button>
+                                    <button 
+                                        className="voice-control-btn voice-cancel-btn"
+                                        onClick={handleVoiceCancel}
+                                    >
+                                        Отменить
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Панель эмодзи */}
                         {showEmojiPanel && (
                             <div className="emoji-panel">
@@ -597,6 +915,13 @@
                                 className="input-field"
                                 maxLength={500}
                             />
+                            <button
+                                className={`voice-button ${isRecording ? 'recording' : ''}`}
+                                onClick={isRecording ? stopRecording : startRecording}
+                                title={isRecording ? "Остановить запись" : "Записать голосовое сообщение"}
+                            >
+                                🎤
+                            </button>
                             <button
                                 onClick={sendMessage}
                                 disabled={!messageText.trim() || !isConnected}

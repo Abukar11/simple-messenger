@@ -1,0 +1,11 @@
+{
+  "excludeFiles": [
+    "**/.vscode/**",
+    "**/chat-history.md",
+    "**/private-notes.txt"
+  ],
+  "hideFiles": [
+    "**/.env",
+    "**/secrets/**"
+  ]
+}

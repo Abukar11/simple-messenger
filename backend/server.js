@@ -2,6 +2,9 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 // Создаем приложение Express
 const app = express();
@@ -32,8 +35,38 @@ const io = socketIo(server, {
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // Увеличиваем лимит для аудио
 app.use(express.static('public')); // Добавляем обслуживание статических файлов
+
+// Настройка multer для загрузки аудио файлов
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = path.join(__dirname, 'public', 'audio');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'voice-' + uniqueSuffix + '.webm');
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: { 
+    fileSize: 5 * 1024 * 1024 // Лимит 5MB
+  },
+  fileFilter: function (req, file, cb) {
+    // Разрешаем только аудио файлы
+    if (file.mimetype.startsWith('audio/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Только аудио файлы разрешены!'));
+    }
+  }
+});
 
 // Хранилище сообщений в памяти (для простоты)
 let messages = [];
@@ -110,6 +143,25 @@ app.get('/api/status', (req, res) => {
     users: activeUsers.length,
     messages: messages.length
   });
+});
+
+// Роут для загрузки голосовых сообщений
+app.post('/api/upload-voice', upload.single('voice'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Файл не загружен' });
+    }
+
+    const audioUrl = `/audio/${req.file.filename}`;
+    res.json({ 
+      success: true, 
+      audioUrl: audioUrl,
+      filename: req.file.filename 
+    });
+  } catch (error) {
+    console.error('Ошибка загрузки аудио:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
 });
 
 // Главная страница - отдаем HTML файл

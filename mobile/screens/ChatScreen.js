@@ -10,26 +10,20 @@ import {
   Platform,
   Alert,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import io from 'socket.io-client';
+// import { Audio } from 'expo-av'; // Временно отключено
 
-// Определяем адрес сервера автоматически
+// Определяем адрес сервера - ТОЛЬКО продакшн для глобального доступа
 const getServerUrl = () => {
-  // Для веб-версии используем localhost или публичный URL
-  if (typeof window !== 'undefined' && window.location) {
-    if (window.location.hostname === 'localhost') {
-      return 'http://localhost:3000';
-    } else if (window.location.hostname.includes('render.com')) {
-      return 'https://simple-messenger-7x2u.onrender.com'; // Render backend
-    } else if (window.location.hostname.includes('serveo.net')) {
-      return 'https://8f2b1687d1e0567a6b3ac5ad45ecbc5a.serveo.net'; // Serveo backend
-    }
-    return `http://${window.location.hostname}:3000`;
-  }
-  // Для мобильного приложения используем публичный сервер
-  return 'https://simple-messenger-7x2u.onrender.com';
+  // ВСЕГДА используем продакшн сервер для доступа с любой сети
+  const prodUrl = 'https://simple-messenger-7x2u.onrender.com';
+  console.log('🌐 Подключение к глобальному серверу:', prodUrl);
+  return prodUrl;
 };
 
 const SERVER_URL = getServerUrl();
+console.log('🚀 SERVER_URL установлен:', SERVER_URL);
 
 export default function ChatScreen({ route }) {
   const { username } = route.params;
@@ -40,11 +34,18 @@ export default function ChatScreen({ route }) {
   const [errorMessage, setErrorMessage] = useState('');
   const [typingUsers, setTypingUsers] = useState([]);
   const [showEmojiPanel, setShowEmojiPanel] = useState(false);
-  const [isDarkTheme, setIsDarkTheme] = useState(false);
+  const [isDarkTheme, setIsDarkTheme] = useState(true); // По умолчанию тёмная тема
+  
+  // State для голосовых сообщений
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [recording, setRecording] = useState(null);
+  const [playingSound, setPlayingSound] = useState(null);
 
   const socketRef = useRef(null);
   const flatListRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const recordingIntervalRef = useRef(null);
 
   // Список популярных эмодзи
   const emojis = ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '😤', '😠', '😡', '🤬', '😱', '😨', '😰', '😥', '😢', '🤔', '🤗', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '👍', '👎', '👌', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '👇', '☝️', '✋', '🤚', '🖐️', '🖖', '👋', '🤏', '💪', '🦾', '🙏', '✍️', '💅', '🤳', '💃', '🕺', '👯', '🧗', '🏇', '⛷️', '🏂', '🏌️', '🏄', '🚣', '🏊', '⛹️', '🏋️', '🚴', '🚵', '🤸', '🤼', '🤽', '🤾', '🤹', '🧘', '🛀', '🛌', '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '🔥', '✨', '💫', '⭐', '🌟', '💥', '💯', '💢', '💨', '💤', '🕳️', '🎉', '🎊', '🙈', '🙉', '🙊', '💯', '💫', '⚡', '🔥', '💝', '🎁', '🎈', '🎀', '🎊', '🎉'];
@@ -55,23 +56,82 @@ export default function ChatScreen({ route }) {
   };
 
   useEffect(() => {
-    // Подключаемся к серверу
-    socketRef.current = io(SERVER_URL);
+    console.log('🔄 Начинаем подключение к серверу:', SERVER_URL);
+    
+    let connectionTimeout;
+    let maxRetries = 3;
+    let retryCount = 0;
+    
+    const connectWithRetry = () => {
+      if (retryCount >= maxRetries) {
+        setErrorMessage('Не удалось подключиться к серверу после нескольких попыток');
+        return;
+      }
+      
+      // Подключаемся к серверу
+      socketRef.current = io(SERVER_URL, {
+        timeout: 15000, // 15 секунд таймаут
+        transports: ['websocket', 'polling'], // Разрешаем разные транспорты
+        forceNew: true // Принудительно создаём новое соединение
+      });
 
-    // Обработка подключения
-    socketRef.current.on('connect', () => {
-      console.log('Подключен к серверу');
-      setIsConnected(true);
+      // Таймаут для подключения
+      connectionTimeout = setTimeout(() => {
+        if (!isConnected) {
+          console.log('⏰ Таймаут подключения, повторная попытка...');
+          retryCount++;
+          setErrorMessage(`Попытка подключения ${retryCount}/${maxRetries}...`);
+          socketRef.current.disconnect();
+          connectWithRetry();
+        }
+      }, 20000); // 20 секунд на подключение
 
-      // Сообщаем серверу о входе пользователя
-      socketRef.current.emit('userJoin', username);
-    });
+      // Обработка подключения
+      socketRef.current.on('connect', () => {
+        console.log('✅ Подключен к серверу');
+        clearTimeout(connectionTimeout);
+        setIsConnected(true);
+        setErrorMessage(''); // Очищаем ошибки
+        retryCount = 0; // Сбрасываем счётчик
 
-    // Обработка отключения
-    socketRef.current.on('disconnect', () => {
-      console.log('Отключен от сервера');
-      setIsConnected(false);
-    });
+        // Сообщаем серверу о входе пользователя
+        socketRef.current.emit('userJoin', username);
+      });
+
+      // Обработка ошибок подключения
+      socketRef.current.on('connect_error', (error) => {
+        console.error('❌ Ошибка подключения:', error);
+        clearTimeout(connectionTimeout);
+        setIsConnected(false);
+        retryCount++;
+        
+        if (retryCount < maxRetries) {
+          setErrorMessage(`Ошибка подключения. Попытка ${retryCount}/${maxRetries}...`);
+          setTimeout(connectWithRetry, 3000); // Повторяем через 3 сек
+        } else {
+          setErrorMessage('Не удалось подключиться к серверу. Проверьте интернет.');
+        }
+      });
+
+      // Обработка отключения
+      socketRef.current.on('disconnect', (reason) => {
+        console.log('❌ Отключен от сервера. Причина:', reason);
+        setIsConnected(false);
+        setErrorMessage('Соединение потеряно');
+        
+        // Автоматическое переподключение через 5 секунд
+        setTimeout(() => {
+          if (!isConnected) {
+            console.log('🔄 Пытаемся переподключиться...');
+            retryCount = 0;
+            connectWithRetry();
+          }
+        }, 5000);
+      });
+    };
+    
+    // Начинаем подключение
+    connectWithRetry();
 
     // Получение истории сообщений
     socketRef.current.on('messageHistory', (history) => {
@@ -137,6 +197,12 @@ export default function ChatScreen({ route }) {
 
     // Очистка при размонтировании
     return () => {
+      // Очищаем все таймеры
+      if (connectionTimeout) {
+        clearTimeout(connectionTimeout);
+      }
+      
+      // Отключаем сокет
       if (socketRef.current) {
         socketRef.current.disconnect();
       }
@@ -172,6 +238,84 @@ export default function ChatScreen({ route }) {
 
     // Останавливаем индикатор печати при отправке сообщения
     socketRef.current.emit('stopTyping', { username: username });
+  };
+
+  // Функция принудительного переподключения
+  const forceReconnect = () => {
+    console.log('🔄 Принудительное переподключение...');
+    setErrorMessage('Переподключение...');
+    setIsConnected(false);
+    
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+    }
+    
+    // Небольшая задержка перед переподключением
+    setTimeout(() => {
+      // Пересоздаём подключение
+      socketRef.current = io(SERVER_URL, {
+        timeout: 15000,
+        transports: ['websocket', 'polling'],
+        forceNew: true
+      });
+      
+      // Обработчики событий (копируем основные)
+      socketRef.current.on('connect', () => {
+        console.log('✅ Переподключен к серверу');
+        setIsConnected(true);
+        setErrorMessage('');
+        socketRef.current.emit('userJoin', username);
+      });
+      
+      socketRef.current.on('connect_error', (error) => {
+        console.error('❌ Ошибка переподключения:', error);
+        setErrorMessage('Не удалось переподключиться');
+      });
+      
+      // Добавляем остальные обработчики
+      socketRef.current.on('messageHistory', (history) => {
+        setMessages(history);
+      });
+      
+      socketRef.current.on('newMessage', (message) => {
+        setMessages(prev => [...prev, message]);
+      });
+      
+      socketRef.current.on('userJoined', (data) => {
+        setUserCount(data.userCount);
+      });
+      
+      socketRef.current.on('userLeft', (data) => {
+        setUserCount(data.userCount);
+      });
+    }, 1000);
+  };
+
+  // Функции для голосовых сообщений (временно отключено)
+  const startRecording = async () => {
+    Alert.alert('Голосовые сообщения', 'Функция в разработке');
+  };
+
+  const stopRecording = async () => {
+    Alert.alert('Голосовые сообщения', 'Функция в разработке');
+  };
+
+  const sendVoiceMessage = async (audioUri) => {
+    Alert.alert('Голосовые сообщения', 'Функция в разработке');
+  };
+
+  const cancelRecording = async () => {
+    Alert.alert('Голосовые сообщения', 'Функция в разработке');
+  };
+
+  const playVoiceMessage = async (audioUrl) => {
+    Alert.alert('Голосовые сообщения', 'Функция в разработке');
+  };
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const handleTextChange = (text) => {
@@ -217,7 +361,27 @@ export default function ChatScreen({ route }) {
         {!isMyMessage && (
           <Text style={styles.messageUsername}>{item.username}</Text>
         )}
-        <Text style={styles.messageText}>{item.text}</Text>
+        
+        {/* Обычное текстовое сообщение */}
+        {item.type !== 'voice' && (
+          <Text style={styles.messageText}>{item.text}</Text>
+        )}
+        
+        {/* Голосовое сообщение */}
+        {item.type === 'voice' && item.audioUrl && (
+          <View style={styles.voiceMessage}>
+            <TouchableOpacity 
+              style={styles.voicePlayButton}
+              onPress={() => playVoiceMessage(item.audioUrl)}
+            >
+              <Text style={styles.voicePlayIcon}>▶️</Text>
+            </TouchableOpacity>
+            <View style={styles.voiceWaveform}>
+              <Text style={styles.voiceText}>🎤 Голосовое сообщение</Text>
+            </View>
+          </View>
+        )}
+        
         <Text style={styles.messageTime}>{item.time}</Text>
       </View>
     );
@@ -228,7 +392,11 @@ export default function ChatScreen({ route }) {
       {/* Статус подключения */}
       <View style={isDarkTheme ? styles.statusBarDark : styles.statusBar}>
         <Text style={styles.statusText}>
-          {isConnected ? `🟢 Онлайн • ${userCount} чел.` : '🔴 Соединение...'}
+          {isConnected 
+            ? `🟢 Онлайн • ${userCount} чел.` 
+            : errorMessage 
+              ? '🔴 Ошибка подключения' 
+              : '🟡 Подключение...'}
         </Text>
         <TouchableOpacity style={styles.themeToggle} onPress={toggleTheme}>
           <Text style={styles.themeToggleText}>
@@ -237,10 +405,22 @@ export default function ChatScreen({ route }) {
         </TouchableOpacity>
       </View>
 
+      {/* Отладочная информация */}
+      <View style={styles.debugInfo}>
+        <Text style={styles.debugText}>🌐 Глобальный сервер: {SERVER_URL}</Text>
+        <Text style={styles.debugText}>📡 Работает с любой Wi-Fi сети</Text>
+      </View>
+
       {/* Сообщение об ошибке */}
       {errorMessage ? (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>⚠️ {errorMessage}</Text>
+          <TouchableOpacity 
+            style={styles.retryButton}
+            onPress={forceReconnect}
+          >
+            <Text style={styles.retryButtonText}>🔄 Повторить</Text>
+          </TouchableOpacity>
         </View>
       ) : null}
 
@@ -273,6 +453,27 @@ export default function ChatScreen({ route }) {
 
       {/* Поле ввода - ВСЕГДА ВИДИМОЕ */}
       <View style={styles.inputContainer}>
+        {/* Панель записи голосового сообщения */}
+        {isRecording && (
+          <View style={styles.voiceRecordingPanel}>
+            <Text style={styles.voiceRecordingText}>🎤 Запись... {formatTime(recordingTime)}</Text>
+            <View style={styles.voiceControls}>
+              <TouchableOpacity
+                style={styles.voiceControlButton}
+                onPress={stopRecording}
+              >
+                <Text style={styles.voiceControlText}>Отправить</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.voiceControlButton, styles.voiceCancelButton]}
+                onPress={cancelRecording}
+              >
+                <Text style={styles.voiceControlText}>Отменить</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {/* Эмодзи панель */}
         {showEmojiPanel && (
           <View style={styles.emojiPanel}>
@@ -311,6 +512,16 @@ export default function ChatScreen({ route }) {
             onSubmitEditing={sendMessage}
             placeholderTextColor="#999"
           />
+
+          <TouchableOpacity
+            style={[
+              styles.voiceButton,
+              isRecording && styles.voiceButtonRecording
+            ]}
+            onPress={isRecording ? stopRecording : startRecording}
+          >
+            <Text style={styles.voiceButtonText}>🎤</Text>
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={[
@@ -443,17 +654,40 @@ const styles = StyleSheet.create({
   },
   errorContainer: {
     backgroundColor: '#ffebee',
-    borderLeftWidth: 4,
-    borderLeftColor: '#f44336',
-    padding: 12,
-    marginHorizontal: 10,
-    marginVertical: 5,
-    borderRadius: 4,
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   errorText: {
-    color: '#c62828',
+    color: '#d32f2f',
     fontSize: 14,
-    textAlign: 'center',
+    flex: 1,
+  },
+  retryButton: {
+    backgroundColor: '#2196f3',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 5,
+    marginLeft: 10,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  debugInfo: {
+    backgroundColor: '#e3f2fd',
+    padding: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  debugText: {
+    fontSize: 12,
+    color: '#666',
+    fontFamily: 'monospace',
   },
   debugContainer: {
     padding: 10,
@@ -574,5 +808,85 @@ const styles = StyleSheet.create({
     color: '#b0b0b0',
     marginTop: 4,
     textAlign: 'right',
+  },
+
+  // Стили для голосовых сообщений
+  voiceRecordingPanel: {
+    backgroundColor: '#fff3cd',
+    borderColor: '#ffc107',
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  voiceRecordingText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#856404',
+  },
+  voiceControls: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  voiceControlButton: {
+    backgroundColor: '#28a745',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  voiceCancelButton: {
+    backgroundColor: '#dc3545',
+  },
+  voiceControlText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  voiceButton: {
+    backgroundColor: '#4CAF50',
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 5,
+  },
+  voiceButtonRecording: {
+    backgroundColor: '#f44336',
+  },
+  voiceButtonText: {
+    fontSize: 18,
+  },
+  voiceMessage: {
+    backgroundColor: '#e3f2fd',
+    borderColor: '#2196F3',
+    borderWidth: 1,
+    borderRadius: 15,
+    padding: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 5,
+  },
+  voicePlayButton: {
+    backgroundColor: '#2196F3',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  voicePlayIcon: {
+    fontSize: 16,
+  },
+  voiceWaveform: {
+    flex: 1,
+  },
+  voiceText: {
+    fontSize: 14,
+    color: '#1976D2',
   },
 });
