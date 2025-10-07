@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏠‍⬛ Raven - Простой мессенджер</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/socket.io-client@4/dist/socket.io.js"></script>
+    <script src="htt                    // Простое уведомление о новом сообщении
+                    if (message.username !== currentUser) {
+                        console.log('Новое сообщение от:', message.username);
+                    }npkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        :root {
+            /* Светлая тема */
+            --bg-primary: #f0f2f5;
+            --bg-secondary: white;
+            --bg-tertiary: #f5f5f5;
+            --text-primary: #1d1c1c;
+            --text-secondary: #666;
+            --text-inverse: white;
+            --border-color: #e0e0e0;
+            --accent-color: #2196F3;
+            --message-bg-my: #2196F3;
+            --message-bg-other: #e3f2fd;
+            --hover-bg: #f0f0f0;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            /* Темная тема */
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-tertiary: #3d3d3d;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --text-inverse: #ffffff;
+            --border-color: #404040;
+            --accent-color: #64b5f6;
+            --message-bg-my: #1976d2;
+            --message-bg-other: #424242;
+            --hover-bg: #505050;
+            --shadow: rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: var(--bg-primary);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 800px;
+            height: 90vh;
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px var(--shadow);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .header {
+            background: var(--accent-color);
+            color: var(--text-inverse);
+            padding: 20px;
+            box-shadow: 0 2px 10px var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-info h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .header-info div {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .theme-toggle {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: var(--text-inverse);
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        .status {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            padding: 10px 20px;
+            text-align: center;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: var(--bg-secondary);
+        }
+
+        .message {
+            margin-bottom: 15px;
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .message.my {
+            background: var(--message-bg-my);
+            color: var(--text-inverse);
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.other {
+            background: var(--message-bg-other);
+            color: var(--text-primary);
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-username {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            opacity: 0.7;
+        }
+
+        .message-text {
+            font-size: 16px;
+            line-height: 1.4;
+        }
+
+        .message-time {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+
+        .input-container {
+            padding: 20px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .emoji-panel {
+            background: var(--bg-tertiary);
+            padding: 15px;
+            border-radius: 15px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+            animation: slideDown 0.2s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .emoji-button {
+            font-size: 24px;
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .emoji-button:hover {
+            background: var(--hover-bg);
+            transform: scale(1.2);
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .emoji-toggle {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .emoji-toggle:hover {
+            background: var(--hover-bg);
+            border-color: var(--accent-color);
+            transform: scale(1.05);
+        }
+
+        .input-field {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .input-field:focus {
+            border-color: var(--accent-color);
+        }
+
+        .send-button {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background: var(--accent-color);
+            color: var(--text-inverse);
+            font-size: 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .send-button:hover {
+            background: #1976D2;
+        }
+
+        .send-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .typing-indicator {
+            padding: 10px 20px;
+            font-style: italic;
+            color: var(--text-secondary);
+            background: var(--bg-tertiary);
+            border-radius: 15px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .typing-animation {
+            display: flex;
+            gap: 3px;
+        }
+
+        .typing-animation span {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            animation: typingBounce 1.4s infinite ease-in-out;
+        }
+
+        .typing-animation span:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+
+        .typing-animation span:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+
+        @keyframes typingBounce {
+
+            0%,
+            80%,
+            100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Стили для реакций */
+        .reactions-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 5px;
+        }
+
+        .reaction-item {
+            display: flex;
+            align-items: center;
+            background: #e3f2fd;
+            border: none;
+            border-radius: 12px;
+            padding: 2px 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .reaction-item:hover {
+            background: #bbdefb;
+            transform: scale(1.05);
+        }
+
+        .reaction-emoji {
+            margin-right: 2px;
+        }
+
+        .reaction-count {
+            color: #666;
+            font-weight: bold;
+        }
+
+        .reaction-buttons {
+            display: flex;
+            gap: 2px;
+            margin-top: 5px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .message:hover .reaction-buttons {
+            opacity: 1;
+        }
+
+        .reaction-button {
+            background: none;
+            border: none;
+            padding: 2px 4px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .reaction-button:hover {
+            background: var(--hover-bg);
+            transform: scale(1.2);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .app-container {
+                height: 100vh;
+                border-radius: 0;
+            }
+
+            .message {
+                max-width: 85%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        function MessengerApp() {
+            const [currentUser, setCurrentUser] = useState('');
+            const [isLoggedIn, setIsLoggedIn] = useState(false);
+            const [messages, setMessages] = useState([]);
+            const [messageText, setMessageText] = useState('');
+            const [userCount, setUserCount] = useState(0);
+            const [isConnected, setIsConnected] = useState(false);
+            const [typingUsers, setTypingUsers] = useState([]);
+            const [showEmojiPanel, setShowEmojiPanel] = useState(false);
+            const [messageReactions, setMessageReactions] = useState(new Map());
+            const [isDarkTheme, setIsDarkTheme] = useState(false);
+
+            const socketRef = useRef(null);
+            const messagesEndRef = useRef(null);
+            const typingTimeoutRef = useRef(null);
+
+            // Список эмодзи
+            const emojiList = [
+                '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇',
+                '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚',
+                '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩',
+                '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣',
+                '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬',
+                '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗',
+                '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯',
+                '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐',
+                '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈',
+                '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾',
+                '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿',
+                '😾', '👋', '🤚', '🖐️', '✋', '🖖', '👌', '🤏', '✌️', '🤞',
+                '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍',
+                '👎', '👊', '✊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝',
+                '🙏', '✍️', '💅', '🤳', '💪', '🦾', '🦿', '🦵', '🦶', '👂'
+            ];
+
+            // Подключение к серверу
+            useEffect(() => {
+                socketRef.current = io();
+
+                socketRef.current.on('connect', () => {
+                    console.log('Подключен к серверу');
+                    setIsConnected(true);
+                });
+
+                socketRef.current.on('disconnect', () => {
+                    console.log('Отключен от сервера');
+                    setIsConnected(false);
+                });
+
+                socketRef.current.on('messageHistory', (history) => {
+                    setMessages(history);
+                });
+
+                socketRef.current.on('newMessage', (message) => {
+                    setMessages(prev => [...prev, message]);
+
+                    // Простое уведомление о новом сообщении
+                    if (message.username !== currentUser) {
+                        console.log('Новое сообщение от:', message.username);
+                    }
+                });
+
+                socketRef.current.on('userJoined', (data) => {
+                    setUserCount(data.userCount);
+                });
+
+                socketRef.current.on('userLeft', (data) => {
+                    setUserCount(data.userCount);
+                });
+
+                socketRef.current.on('userTyping', (data) => {
+                    setTypingUsers(prev => {
+                        if (!prev.includes(data.username)) {
+                            return [...prev, data.username];
+                        }
+                        return prev;
+                    });
+                });
+
+                socketRef.current.on('userStoppedTyping', (data) => {
+                    setTypingUsers(prev => prev.filter(user => user !== data.username));
+                });
+
+                socketRef.current.on('reactionUpdate', (data) => {
+                    setMessageReactions(prev => {
+                        const newReactions = new Map(prev);
+                        newReactions.set(data.messageId, data.reactions);
+                        return newReactions;
+                    });
+                });
+
+                socketRef.current.on('joinSuccess', (data) => {
+                    setUserCount(data.userCount);
+                });
+
+                return () => {
+                    if (socketRef.current) {
+                        socketRef.current.disconnect();
+                    }
+                };
+            }, [currentUser]);
+
+            // Автопрокрутка к последнему сообщению
+            useEffect(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            }, [messages]);
+
+            // Функции для работы с темой
+            const toggleTheme = () => {
+                const newTheme = !isDarkTheme;
+                setIsDarkTheme(newTheme);
+                document.documentElement.setAttribute('data-theme', newTheme ? 'dark' : 'light');
+                localStorage.setItem('darkTheme', newTheme);
+            };
+
+            // Загрузка темы из localStorage при запуске
+            useEffect(() => {
+                const savedTheme = localStorage.getItem('darkTheme') === 'true';
+                setIsDarkTheme(savedTheme);
+                document.documentElement.setAttribute('data-theme', savedTheme ? 'dark' : 'light');
+            }, []);
+
+            const handleLogin = (username) => {
+                if (username.trim()) {
+                    setCurrentUser(username.trim());
+                    setIsLoggedIn(true);
+                    socketRef.current.emit('userJoin', username.trim());
+                }
+            };
+
+            const sendMessage = () => {
+                if (!messageText.trim() || !isConnected) return;
+
+                const currentTime = new Date().toLocaleTimeString('ru-RU', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                socketRef.current.emit('sendMessage', {
+                    username: currentUser,
+                    text: messageText.trim(),
+                    time: currentTime
+                });
+                setMessageText('');
+                // Останавливаем индикатор печати при отправке сообщения
+                socketRef.current.emit('stopTyping', { username: currentUser });
+            };
+
+            const handleInputChange = (e) => {
+                setMessageText(e.target.value);
+
+                // Отправляем событие начала печати
+                if (e.target.value.trim() && isConnected) {
+                    socketRef.current.emit('typing', { username: currentUser });
+
+                    // Очищаем предыдущий таймер
+                    if (typingTimeoutRef.current) {
+                        clearTimeout(typingTimeoutRef.current);
+                    }
+
+                    // Устанавливаем новый таймер для остановки печати
+                    typingTimeoutRef.current = setTimeout(() => {
+                        socketRef.current.emit('stopTyping', { username: currentUser });
+                    }, 1000); // Останавливаем через 1 секунду бездействия
+                } else {
+                    // Если поле пустое, останавливаем печать
+                    socketRef.current.emit('stopTyping', { username: currentUser });
+                }
+            };
+
+            const handleKeyPress = (e) => {
+                if (e.key === 'Enter') {
+                    if (isLoggedIn) {
+                        sendMessage();
+                    } else {
+                        handleLogin(e.target.value);
+                    }
+                }
+            };
+
+            // Функции для работы с эмодзи
+            const toggleEmojiPanel = () => {
+                setShowEmojiPanel(!showEmojiPanel);
+            };
+
+            const addReaction = (messageId, emoji) => {
+                if (!isConnected) return;
+
+                socketRef.current.emit('addReaction', {
+                    messageId: messageId,
+                    emoji: emoji,
+                    username: currentUser
+                });
+            };
+
+            const addEmoji = (emoji) => {
+                setMessageText(prev => prev + emoji);
+                setShowEmojiPanel(false); // Закрываем панель после выбора
+            };
+
+            if (!isLoggedIn) {
+                return (
+                    <div className="app-container">
+                        <div className="header">
+                            <div className="header-info">
+                                <h1>🏠‍⬛ Raven</h1>
+                                <div>Простой мессенджер</div>
+                            </div>
+                            <button className="theme-toggle" onClick={toggleTheme}>
+                                {isDarkTheme ? '☀️ Светлая' : '🌙 Темная'}
+                            </button>
+                        </div>
+                        <div style={{
+                            flex: 1,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            padding: '40px'
+                        }}>
+                            <h2 style={{ marginBottom: '20px', textAlign: 'center' }}>
+                                Добро пожаловать!
+                            </h2>
+                            <p style={{
+                                marginBottom: '30px',
+                                textAlign: 'center',
+                                color: 'var(--text-secondary)',
+                                lineHeight: '1.6'
+                            }}>
+                                Введите ваше имя для входа в чат
+                            </p>
+                            <input
+                                type="text"
+                                placeholder="Введите ваше имя..."
+                                onKeyPress={handleKeyPress}
+                                style={{
+                                    padding: '15px 20px',
+                                    fontSize: '16px',
+                                    borderRadius: '25px',
+                                    border: '2px solid var(--border-color)',
+                                    outline: 'none',
+                                    width: '100%',
+                                    maxWidth: '300px',
+                                    textAlign: 'center',
+                                    background: 'var(--bg-secondary)',
+                                    color: 'var(--text-primary)'
+                                }}
+                                autoFocus
+                            />
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="app-container">
+                    <div className="header">
+                        <div className="header-info">
+                            <h1>🏠‍⬛ Raven</h1>
+                            <div>Добро пожаловать, {currentUser}!</div>
+                        </div>
+                        <button className="theme-toggle" onClick={toggleTheme}>
+                            {isDarkTheme ? '☀️ Светлая' : '🌙 Темная'}
+                        </button>
+                    </div>
+
+                    <div className="status">
+                        {isConnected ? `🟢 Онлайн • ${userCount} человек` : '🔴 Соединение...'}
+                    </div>
+
+                    <div className="messages-container">
+                        {messages.map((message) => {
+                            const reactions = messageReactions.get(message.id) || {};
+                            const reactionEmojis = ['❤️', '👍', '😂', '😢', '😮', '😡'];
+
+                            return (
+                                <div
+                                    key={message.id}
+                                    className={`message ${message.username === currentUser ? 'my' : 'other'}`}
+                                >
+                                    {message.username !== currentUser && (
+                                        <div className="message-username">{message.username}</div>
+                                    )}
+                                    <div className="message-text">{message.text}</div>
+                                    <div className="message-time">{message.time}</div>
+
+                                    {/* Показ реакций */}
+                                    {Object.keys(reactions).length > 0 && (
+                                        <div className="reactions-container">
+                                            {Object.entries(reactions).map(([emoji, users]) => (
+                                                <button
+                                                    key={emoji}
+                                                    className="reaction-item"
+                                                    onClick={() => addReaction(message.id, emoji)}
+                                                >
+                                                    <span className="reaction-emoji">{emoji}</span>
+                                                    <span className="reaction-count">{users.length}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Кнопки реакций */}
+                                    <div className="reaction-buttons">
+                                        {reactionEmojis.map((emoji) => (
+                                            <button
+                                                key={emoji}
+                                                className="reaction-button"
+                                                onClick={() => addReaction(message.id, emoji)}
+                                                title={`Добавить реакцию ${emoji}`}
+                                            >
+                                                {emoji}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })}
+
+                        {/* Индикатор печати */}
+                        {typingUsers.length > 0 && (
+                            <div className="typing-indicator">
+                                <span className="typing-dots">
+                                    {typingUsers.length === 1
+                                        ? `${typingUsers[0]} печатает...`
+                                        : `${typingUsers.length} пользователей печатают...`
+                                    }
+                                </span>
+                                <div className="typing-animation">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                            </div>
+                        )}
+
+                        <div ref={messagesEndRef} />
+                    </div>
+
+                    <div className="input-container">
+                        {/* Панель эмодзи */}
+                        {showEmojiPanel && (
+                            <div className="emoji-panel">
+                                {emojiList.map((emoji, index) => (
+                                    <span
+                                        key={index}
+                                        className="emoji-button"
+                                        onClick={() => addEmoji(emoji)}
+                                        title={emoji}
+                                    >
+                                        {emoji}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Строка ввода */}
+                        <div className="input-row">
+                            <button
+                                className="emoji-toggle"
+                                onClick={toggleEmojiPanel}
+                                title="Эмодзи"
+                            >
+                                😀
+                            </button>
+
+                            <input
+                                type="text"
+                                className="input-field"
+                                placeholder="Введите сообщение..."
+                                value={messageText}
+                                onChange={handleInputChange}
+                                onKeyPress={handleKeyPress}
+                                disabled={!isConnected}
+                            />
+
+                            <button
+                                className="send-button"
+                                onClick={sendMessage}
+                                disabled={!messageText.trim() || !isConnected}
+                                title="Отправить"
+                            >
+                                ➤
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<MessengerApp />, document.getElementById('root'));
+    </script>
+</body>
+
+</html>

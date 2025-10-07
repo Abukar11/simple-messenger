@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🏠‍⬛ Raven - Мобильный чат</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f0f2f5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: #2196F3;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            flex-shrink: 0;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+
+        .status {
+            background: #e3f2fd;
+            padding: 8px;
+            text-align: center;
+            font-size: 12px;
+            color: #1976d2;
+            flex-shrink: 0;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 15px;
+            max-width: 75%;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.my {
+            background: #2196F3;
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message.other {
+            background: white;
+            color: #333;
+            margin-right: auto;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .message-user {
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 3px;
+            opacity: 0.8;
+        }
+
+        .message-text {
+            font-size: 15px;
+            line-height: 1.4;
+        }
+
+        .message-time {
+            font-size: 10px;
+            margin-top: 3px;
+            opacity: 0.7;
+        }
+
+        .input-container {
+            background: white;
+            padding: 10px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .input-field {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 20px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .send-button {
+            width: 45px;
+            height: 45px;
+            background: #2196F3;
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-button:active {
+            background: #1976d2;
+            transform: scale(0.95);
+        }
+
+        .login-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .login-screen h2 {
+            color: #2196F3;
+            margin-bottom: 20px;
+        }
+
+        .login-input {
+            width: 100%;
+            max-width: 300px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .login-button {
+            width: 100%;
+            max-width: 300px;
+            padding: 15px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .error {
+            color: #f44336;
+            padding: 10px;
+            text-align: center;
+            background: #ffebee;
+            border-radius: 5px;
+            margin: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏠‍⬛ Raven</h1>
+        <div id="username-display"></div>
+    </div>
+    
+    <div class="status" id="status">Загрузка...</div>
+    
+    <div id="app"></div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        let currentUser = '';
+        let socket = null;
+        let messages = [];
+
+        function initApp() {
+            const app = document.getElementById('app');
+            
+            if (!currentUser) {
+                app.innerHTML = `
+                    <div class="login-screen">
+                        <h2>Добро пожаловать!</h2>
+                        <input type="text" id="username-input" class="login-input" placeholder="Введите ваше имя..." maxlength="20">
+                        <button onclick="login()" class="login-button">Войти в чат</button>
+                    </div>
+                `;
+                
+                document.getElementById('username-input').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') login();
+                });
+            } else {
+                document.getElementById('username-display').textContent = currentUser;
+                app.innerHTML = `
+                    <div class="messages" id="messages"></div>
+                    <div class="input-container">
+                        <input type="text" id="message-input" class="input-field" placeholder="Сообщение...">
+                        <button onclick="sendMessage()" class="send-button">➤</button>
+                    </div>
+                `;
+                
+                document.getElementById('message-input').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') sendMessage();
+                });
+                
+                connectSocket();
+                renderMessages();
+            }
+        }
+
+        function login() {
+            const input = document.getElementById('username-input');
+            const username = input.value.trim();
+            
+            if (!username) {
+                alert('Введите имя');
+                return;
+            }
+            
+            if (username.length < 2) {
+                alert('Имя должно содержать минимум 2 символа');
+                return;
+            }
+            
+            currentUser = username;
+            initApp();
+        }
+
+        function connectSocket() {
+            const status = document.getElementById('status');
+            status.textContent = 'Подключение...';
+            
+            try {
+                socket = io({
+                    transports: ['websocket', 'polling'],
+                    reconnection: true,
+                    reconnectionAttempts: 5,
+                    reconnectionDelay: 1000
+                });
+
+                socket.on('connect', () => {
+                    console.log('Подключено к серверу');
+                    status.textContent = '🟢 Онлайн';
+                    status.style.background = '#c8e6c9';
+                    status.style.color = '#2e7d32';
+                    socket.emit('userJoin', currentUser);
+                });
+
+                socket.on('disconnect', () => {
+                    console.log('Отключено от сервера');
+                    status.textContent = '🔴 Нет связи';
+                    status.style.background = '#ffcdd2';
+                    status.style.color = '#c62828';
+                });
+
+                socket.on('messageHistory', (history) => {
+                    console.log('Получена история:', history.length, 'сообщений');
+                    messages = history;
+                    renderMessages();
+                });
+
+                socket.on('newMessage', (message) => {
+                    console.log('Новое сообщение:', message);
+                    messages.push(message);
+                    renderMessages();
+                });
+
+                socket.on('connect_error', (error) => {
+                    console.error('Ошибка подключения:', error);
+                    status.textContent = '⚠️ Ошибка подключения';
+                    status.style.background = '#fff3e0';
+                    status.style.color = '#e65100';
+                });
+
+            } catch (error) {
+                console.error('Ошибка создания socket:', error);
+                document.getElementById('app').innerHTML = `
+                    <div class="error">
+                        Ошибка подключения к серверу<br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+            
+            if (!text || !socket) return;
+            
+            const message = {
+                username: currentUser,
+                text: text,
+                time: new Date().toLocaleTimeString('ru-RU', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })
+            };
+            
+            socket.emit('sendMessage', message);
+            input.value = '';
+        }
+
+        function renderMessages() {
+            const container = document.getElementById('messages');
+            if (!container) return;
+            
+            container.innerHTML = messages.map(msg => `
+                <div class="message ${msg.username === currentUser ? 'my' : 'other'}">
+                    ${msg.username !== currentUser ? `<div class="message-user">${msg.username}</div>` : ''}
+                    <div class="message-text">${escapeHtml(msg.text)}</div>
+                    <div class="message-time">${msg.time}</div>
+                </div>
+            `).join('');
+            
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Проверка загрузки Socket.io
+        if (typeof io === 'undefined') {
+            document.getElementById('app').innerHTML = `
+                <div class="error">
+                    Не удалось загрузить Socket.io<br>
+                    Проверьте интернет соединение
+                </div>
+            `;
+        } else {
+            initApp();
+        }
+    </script>
+</body>
+</html>

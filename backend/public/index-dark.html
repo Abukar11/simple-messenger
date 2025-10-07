@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -31,7 +30,7 @@
             height: 90vh;
             background: white;
             border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -42,7 +41,7 @@
             color: white;
             padding: 20px;
             text-align: center;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
         .status {
@@ -126,7 +125,6 @@
                 opacity: 0;
                 transform: translateY(-10px);
             }
-
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -184,7 +182,7 @@
         }
 
         .input-field:focus {
-            border-color: #188ff1;
+            border-color: #2196F3;
         }
 
         .send-button {
@@ -217,7 +215,7 @@
         .login-input {
             width: 100%;
             padding: 15px 20px;
-            border: 2px solid #868686;
+            border: 2px solid #e0e0e0;
             border-radius: 25px;
             font-size: 18px;
             text-align: center;
@@ -242,15 +240,8 @@
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         @media (max-width: 768px) {
@@ -258,7 +249,7 @@
                 height: 100vh;
                 border-radius: 0;
             }
-
+            
             .message {
                 max-width: 85%;
             }
@@ -303,14 +294,10 @@
         }
 
         @keyframes typingBounce {
-
-            0%,
-            80%,
-            100% {
+            0%, 80%, 100% {
                 transform: scale(0.8);
                 opacity: 0.5;
             }
-
             40% {
                 transform: scale(1);
                 opacity: 1;
@@ -318,7 +305,6 @@
         }
     </style>
 </head>
-
 <body>
     <div id="root"></div>
 
@@ -334,7 +320,7 @@
             const [isConnected, setIsConnected] = useState(false);
             const [typingUsers, setTypingUsers] = useState([]);
             const [showEmojiPanel, setShowEmojiPanel] = useState(false);
-
+            
             const socketRef = useRef(null);
             const messagesEndRef = useRef(null);
             const typingTimeoutRef = useRef(null);
@@ -349,16 +335,16 @@
                     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                     const oscillator = audioContext.createOscillator();
                     const gainNode = audioContext.createGain();
-
+                    
                     oscillator.connect(gainNode);
                     gainNode.connect(audioContext.destination);
-
+                    
                     oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
                     oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
-
+                    
                     gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
                     gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-
+                    
                     oscillator.start(audioContext.currentTime);
                     oscillator.stop(audioContext.currentTime + 0.3);
                 } catch (error) {
@@ -369,7 +355,7 @@
             useEffect(() => {
                 // Подключение к серверу
                 socketRef.current = io();
-
+                
                 socketRef.current.on('connect', () => {
                     console.log('Подключен к серверу');
                     setIsConnected(true);
@@ -438,9 +424,9 @@
 
             const sendMessage = () => {
                 if (messageText.trim() && isConnected) {
-                    const currentTime = new Date().toLocaleTimeString('ru-RU', {
-                        hour: '2-digit',
-                        minute: '2-digit'
+                    const currentTime = new Date().toLocaleTimeString('ru-RU', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
                     });
                     socketRef.current.emit('sendMessage', {
                         username: currentUser,
@@ -455,16 +441,16 @@
 
             const handleInputChange = (e) => {
                 setMessageText(e.target.value);
-
+                
                 // Отправляем событие начала печати
                 if (e.target.value.trim() && isConnected) {
                     socketRef.current.emit('typing', { username: currentUser });
-
+                    
                     // Очищаем предыдущий таймер
                     if (typingTimeoutRef.current) {
                         clearTimeout(typingTimeoutRef.current);
                     }
-
+                    
                     // Устанавливаем новый таймер для остановки печати
                     typingTimeoutRef.current = setTimeout(() => {
                         socketRef.current.emit('stopTyping', { username: currentUser });
@@ -613,5 +599,4 @@
         ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
-
 </html>

@@ -40,6 +40,7 @@ export default function ChatScreen({ route }) {
   const [errorMessage, setErrorMessage] = useState('');
   const [typingUsers, setTypingUsers] = useState([]);
   const [showEmojiPanel, setShowEmojiPanel] = useState(false);
+  const [isDarkTheme, setIsDarkTheme] = useState(false);
 
   const socketRef = useRef(null);
   const flatListRef = useRef(null);
@@ -47,6 +48,11 @@ export default function ChatScreen({ route }) {
 
   // Список популярных эмодзи
   const emojis = ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '😤', '😠', '😡', '🤬', '😱', '😨', '😰', '😥', '😢', '🤔', '🤗', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '👍', '👎', '👌', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '👇', '☝️', '✋', '🤚', '🖐️', '🖖', '👋', '🤏', '💪', '🦾', '🙏', '✍️', '💅', '🤳', '💃', '🕺', '👯', '🧗', '🏇', '⛷️', '🏂', '🏌️', '🏄', '🚣', '🏊', '⛹️', '🏋️', '🚴', '🚵', '🤸', '🤼', '🤽', '🤾', '🤹', '🧘', '🛀', '🛌', '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '🔥', '✨', '💫', '⭐', '🌟', '💥', '💯', '💢', '💨', '💤', '🕳️', '🎉', '🎊', '🙈', '🙉', '🙊', '💯', '💫', '⚡', '🔥', '💝', '🎁', '🎈', '🎀', '🎊', '🎉'];
+
+  // Функция переключения темы
+  const toggleTheme = () => {
+    setIsDarkTheme(!isDarkTheme);
+  };
 
   useEffect(() => {
     // Подключаемся к серверу
@@ -150,9 +156,9 @@ export default function ChatScreen({ route }) {
   const sendMessage = () => {
     if (!messageText.trim() || !isConnected) return;
 
-    const currentTime = new Date().toLocaleTimeString('ru-RU', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    const currentTime = new Date().toLocaleTimeString('ru-RU', {
+      hour: '2-digit',
+      minute: '2-digit'
     });
 
     // Отправляем сообщение на сервер
@@ -163,23 +169,23 @@ export default function ChatScreen({ route }) {
     });
 
     setMessageText('');
-    
+
     // Останавливаем индикатор печати при отправке сообщения
     socketRef.current.emit('stopTyping', { username: username });
   };
 
   const handleTextChange = (text) => {
     setMessageText(text);
-    
+
     // Отправляем событие начала печати
     if (text.trim() && isConnected) {
       socketRef.current.emit('typing', { username: username });
-      
+
       // Очищаем предыдущий таймер
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
-      
+
       // Устанавливаем новый таймер для остановки печати
       typingTimeoutRef.current = setTimeout(() => {
         socketRef.current.emit('stopTyping', { username: username });
@@ -218,12 +224,17 @@ export default function ChatScreen({ route }) {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={isDarkTheme ? styles.containerDark : styles.container}>
       {/* Статус подключения */}
-      <View style={styles.statusBar}>
+      <View style={isDarkTheme ? styles.statusBarDark : styles.statusBar}>
         <Text style={styles.statusText}>
           {isConnected ? `🟢 Онлайн • ${userCount} чел.` : '🔴 Соединение...'}
         </Text>
+        <TouchableOpacity style={styles.themeToggle} onPress={toggleTheme}>
+          <Text style={styles.themeToggleText}>
+            {isDarkTheme ? '☀️' : '🌙'}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Сообщение об ошибке */}
@@ -251,8 +262,8 @@ export default function ChatScreen({ route }) {
         {typingUsers.length > 0 && (
           <View style={styles.typingIndicator}>
             <Text style={styles.typingText}>
-              {typingUsers.length === 1 
-                ? `${typingUsers[0]} печатает...` 
+              {typingUsers.length === 1
+                ? `${typingUsers[0]} печатает...`
                 : `${typingUsers.length} пользователей печатают...`
               }
             </Text>
@@ -281,7 +292,7 @@ export default function ChatScreen({ route }) {
             />
           </View>
         )}
-        
+
         {/* Строка ввода */}
         <View style={styles.inputRow}>
           <TouchableOpacity
@@ -290,7 +301,7 @@ export default function ChatScreen({ route }) {
           >
             <Text style={styles.emojiToggleText}>😀</Text>
           </TouchableOpacity>
-          
+
           <TextInput
             style={styles.textInput}
             placeholder="Введите сообщение..."
@@ -300,7 +311,7 @@ export default function ChatScreen({ route }) {
             onSubmitEditing={sendMessage}
             placeholderTextColor="#999"
           />
-          
+
           <TouchableOpacity
             style={[
               styles.sendButton,
@@ -333,12 +344,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#2196F3',
     paddingVertical: 10,
     paddingHorizontal: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   statusText: {
     fontSize: 14,
     color: '#fff',
-    textAlign: 'center',
     fontWeight: 'bold',
+    flex: 1,
   },
   messageContainer: {
     maxWidth: '80%',
@@ -504,5 +518,61 @@ const styles = StyleSheet.create({
   },
   emojiToggleText: {
     fontSize: 20,
+  },
+  // Темная тема
+  containerDark: {
+    flex: 1,
+    backgroundColor: '#1a1a1a',
+  },
+  statusBarDark: {
+    backgroundColor: '#1976d2',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  themeToggle: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  themeToggleText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  messageContainerDark: {
+    maxWidth: '80%',
+    marginVertical: 4,
+    padding: 12,
+    borderRadius: 18,
+  },
+  myMessageDark: {
+    alignSelf: 'flex-end',
+    backgroundColor: '#1976d2',
+  },
+  otherMessageDark: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#424242',
+    borderWidth: 1,
+    borderColor: '#555',
+  },
+  messageUsernameDark: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#b0b0b0',
+    marginBottom: 4,
+  },
+  messageTextDark: {
+    fontSize: 16,
+    color: '#ffffff',
+    lineHeight: 20,
+  },
+  messageTimeDark: {
+    fontSize: 11,
+    color: '#b0b0b0',
+    marginTop: 4,
+    textAlign: 'right',
   },
 });

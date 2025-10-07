@@ -38,6 +38,7 @@ app.use(express.static('public')); // Добавляем обслуживани�
 // Хранилище сообщений в памяти (для простоты)
 let messages = [];
 let activeUsers = [];
+let messageReactions = new Map(); // Храним реакции по ID сообщения
 
 // Rate limiting - ограничение частоты сообщений
 const userMessageLimits = new Map();
@@ -230,6 +231,37 @@ io.on('connection', (socket) => {
         username: data.username
       });
     }
+  });
+
+  // Обработчик добавления реакции
+  socket.on('addReaction', (data) => {
+    const { messageId, emoji, username } = data;
+
+    if (!messageReactions.has(messageId)) {
+      messageReactions.set(messageId, {});
+    }
+
+    const reactions = messageReactions.get(messageId);
+    if (!reactions[emoji]) {
+      reactions[emoji] = [];
+    }
+
+    // Удаляем предыдущую реакцию пользователя на это сообщение
+    Object.keys(reactions).forEach(reactionEmoji => {
+      reactions[reactionEmoji] = reactions[reactionEmoji].filter(user => user !== username);
+      if (reactions[reactionEmoji].length === 0) {
+        delete reactions[reactionEmoji];
+      }
+    });
+
+    // Добавляем новую реакцию
+    reactions[emoji].push(username);
+
+    // Отправляем обновления всем клиентам
+    io.emit('reactionUpdate', {
+      messageId,
+      reactions: messageReactions.get(messageId)
+    });
   });
 
   // Обработка отключения пользователя
