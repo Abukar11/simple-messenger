@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: simple-messenger
+    env: node
+    region: frankfurt
+    plan: free
+    buildCommand: cd deploy && npm install
+    startCommand: cd deploy && node app.js
+    envVars:
+      - key: NODE_ENV
+        value: production
