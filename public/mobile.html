@@ -870,14 +870,21 @@
                         });
                         
                         // Отправляем через Socket.io с base64 данными
-                        socketRef.current.emit('sendMessage', {
+                        const voiceMessage = {
                             username: currentUser,
                             text: '🎤 Голосовое сообщение',
                             audioData: audioData, // base64 аудио
                             duration: formatTime(recordingTime), // длительность записи
                             time: currentTime,
                             type: 'voice'
+                        };
+                        console.log('📤 Отправляю голосовое:', {
+                            type: voiceMessage.type,
+                            hasAudioData: !!voiceMessage.audioData,
+                            audioDataLength: voiceMessage.audioData?.length,
+                            duration: voiceMessage.duration
                         });
+                        socketRef.current.emit('sendMessage', voiceMessage);
                     };
                     reader.readAsDataURL(audioBlob);
                 } catch (error) {

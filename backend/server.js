@@ -243,6 +243,18 @@ io.on('connection', (socket) => {
         return;
       }
 
+      // Логируем входящие данные для голосовых сообщений
+      if (data.type === 'voice') {
+        console.log('🎤 Получено голосовое сообщение:', {
+          username: data.username,
+          type: data.type,
+          hasAudioData: !!data.audioData,
+          audioDataLength: data.audioData?.length,
+          hasAudioUrl: !!data.audioUrl,
+          duration: data.duration
+        });
+      }
+
       // Создаем сообщение с очищенными данными
       const message = {
         id: Date.now(),
@@ -260,6 +272,18 @@ io.on('connection', (socket) => {
         audioUrl: data.audioUrl || null,
         duration: data.duration || null
       };
+
+      // Логируем исходящее сообщение для голосовых
+      if (message.type === 'voice') {
+        console.log('📤 Отправляем голосовое сообщение:', {
+          id: message.id,
+          type: message.type,
+          hasAudioData: !!message.audioData,
+          audioDataLength: message.audioData?.length,
+          hasAudioUrl: !!message.audioUrl,
+          duration: message.duration
+        });
+      }
 
       // Сохраняем сообщение
       messages.push(message);
