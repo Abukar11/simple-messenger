@@ -760,6 +760,7 @@
                 });
 
                 socketRef.current.on('newMessage', (message) => {
+                    console.log('📨 Получено сообщение:', message);
                     setMessages(prev => [...prev, message]);
                     // Воспроизводим звук только если сообщение не от текущего пользователя
                     if (message.username !== currentUser) {
@@ -1055,7 +1056,15 @@
                     </div>
 
                     <div className="messages-container">
-                        {messages.map((message) => (
+                        {messages.map((message) => {
+                            console.log('🎨 Рендеринг сообщения:', {
+                                id: message.id,
+                                type: message.type,
+                                hasAudioData: !!message.audioData,
+                                hasAudioUrl: !!message.audioUrl,
+                                text: message.text
+                            });
+                            return (
                             <div
                                 key={message.id}
                                 className={`message ${message.username === currentUser ? 'my' : 'other'}`}
@@ -1090,7 +1099,8 @@
                                 
                                 <div className="message-time">{message.time}</div>
                             </div>
-                        ))}
+                            );
+                        })}
                         
                         {/* Индикатор печати */}
                         {typingUsers.length > 0 && (

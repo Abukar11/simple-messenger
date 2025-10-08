@@ -12,7 +12,8 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import io from 'socket.io-client';
-// import { Audio } from 'expo-av'; // Временно отключено
+import { Audio } from 'expo-av';
+import * as FileSystem from 'expo-file-system';
 
 // Определяем адрес сервера - ТОЛЬКО продакшн для глобального доступа
 const getServerUrl = () => {
@@ -291,25 +292,77 @@ export default function ChatScreen({ route }) {
     }, 1000);
   };
 
-  // Функции для голосовых сообщений (временно отключено)
+  // Функции для голосовых сообщений (минимальная реализация воспроизведения)
   const startRecording = async () => {
-    Alert.alert('Голосовые сообщения', 'Функция в разработке');
+    Alert.alert('Голосовые сообщения', 'Функция записи пока не реализована в мобильном клиенте');
   };
 
   const stopRecording = async () => {
-    Alert.alert('Голосовые сообщения', 'Функция в разработке');
+    Alert.alert('Голосовые сообщения', 'Функция записи пока не реализована в мобильном клиенте');
   };
 
   const sendVoiceMessage = async (audioUri) => {
-    Alert.alert('Голосовые сообщения', 'Функция в разработке');
+    Alert.alert('Голосовые сообщения', 'Отправка голосовых сообщений с клиента в разработке');
   };
 
   const cancelRecording = async () => {
-    Alert.alert('Голосовые сообщения', 'Функция в разработке');
+    Alert.alert('Голосовые сообщения', 'Отмена записи');
   };
 
-  const playVoiceMessage = async (audioUrl) => {
-    Alert.alert('Голосовые сообщения', 'Функция в разработке');
+  const playVoiceMessage = async (audioUrlOrData) => {
+    try {
+      // Если уже играет звук — остановим и освободим
+      if (playingSound) {
+        await playingSound.unloadAsync();
+        setPlayingSound(null);
+        // Если кликнули повторно на тот же файл — просто остановим
+        return;
+      }
+
+      // Создаём новый Sound объект
+      const { sound } = await Audio.Sound.createAsync(
+        // Если пришла data: URI (base64), нужно сначала записать в файл
+        (async () => {
+          if (typeof audioUrlOrData === 'string' && audioUrlOrData.startsWith('data:')) {
+            // Запишем в cacheDirectory
+            const extension = audioUrlOrData.match(/data:audio\/(\w+);base64,/)?.[1] || 'webm';
+            const filename = `${FileSystem.cacheDirectory}voice_${Date.now()}.${extension}`;
+            // Извлекаем только base64 часть
+            const base64 = audioUrlOrData.split(',')[1] || '';
+            await FileSystem.writeAsStringAsync(filename, base64, { encoding: FileSystem.EncodingType.Base64 });
+            return { uri: filename };
+          }
+          // Обычный URL
+          return { uri: audioUrlOrData };
+        })()
+      );
+
+      setPlayingSound(sound);
+      await sound.playAsync();
+
+      // Освобождение после окончания
+      sound.setOnPlaybackStatusUpdate(async (status) => {
+        if (status.didJustFinish) {
+          try {
+            await sound.unloadAsync();
+          } catch (e) {
+            // ignore
+          }
+          setPlayingSound(null);
+        }
+      });
+    } catch (error) {
+      console.error('Ошибка воспроизведения голосового сообщения в мобильном клиенте:', error);
+      Alert.alert('Ошибка', 'Не удалось воспроизвести голосовое сообщение');
+      try {
+        if (playingSound) {
+          await playingSound.unloadAsync();
+        }
+      } catch (e) {
+        // ignore
+      }
+      setPlayingSound(null);
+    }
   };
 
   const formatTime = (seconds) => {

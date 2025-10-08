@@ -100,9 +100,16 @@ function validateMessage(data) {
     return { valid: false, error: 'Неверное имя пользователя' };
   }
 
-  // Проверяем текст сообщения
-  if (!data.text || typeof data.text !== 'string') {
-    return { valid: false, error: 'Пустое сообщение' };
+  // Если это не голосовое сообщение — проверяем текст сообщения
+  if (data.type !== 'voice') {
+    if (!data.text || typeof data.text !== 'string') {
+      return { valid: false, error: 'Пустое сообщение' };
+    }
+  } else {
+    // Для voice-сообщений допускаем отсутствие текста, но требуем аудиоданные (audioData или audioUrl)
+    if (!data.audioData && !data.audioUrl) {
+      return { valid: false, error: 'Отсутствуют аудиоданные для голосового сообщения' };
+    }
   }
 
   // Ограничения на длину
@@ -240,12 +247,18 @@ io.on('connection', (socket) => {
       const message = {
         id: Date.now(),
         username: sanitizeMessage(data.username.trim()),
-        text: sanitizeMessage(data.text.trim()),
+        // Для голосовых сообщений текст может быть пустым или служебным
+        text: data.type === 'voice' ? sanitizeMessage((data.text && data.text.trim()) || '🎤 Голосовое сообщение') : sanitizeMessage(data.text.trim()),
         timestamp: new Date().toISOString(),
         time: new Date().toLocaleTimeString('ru-RU', {
           hour: '2-digit',
           minute: '2-digit'
-        })
+        }),
+        type: data.type || 'text',
+        // Если клиент передал base64 аудио или URL — сохраняем в сообщении для пересылки
+        audioData: data.audioData || null,
+        audioUrl: data.audioUrl || null,
+        duration: data.duration || null
       };
 
       // Сохраняем сообщение
