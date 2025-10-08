@@ -835,10 +835,10 @@
                     console.log('🎙️ Запускаем запись...');
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     
-                    // Настройки для меньшего размера файла
+                    // Настройки для отличного качества
                     const options = {
                         mimeType: 'audio/webm;codecs=opus',
-                        audioBitsPerSecond: 48000 // Улучшенное качество (48kbps)
+                        audioBitsPerSecond: 96000 // Отличное качество (96kbps)
                     };
                     
                     const recorder = new MediaRecorder(stream, options);
