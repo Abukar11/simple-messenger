@@ -692,6 +692,7 @@
             const [recordingTime, setRecordingTime] = useState(0);
             const [mediaRecorder, setMediaRecorder] = useState(null);
             const [audioChunks, setAudioChunks] = useState([]);
+            const audioChunksRef = useRef([]); // Используем ref для надёжного доступа к chunks
             const [playingAudio, setPlayingAudio] = useState(null);
 
             const socketRef = useRef(null);
@@ -846,6 +847,7 @@
                     
                     setMediaRecorder(recorder);
                     setAudioChunks([]);
+                    audioChunksRef.current = []; // Очищаем ref
                     setIsRecording(true);
                     setRecordingTime(0);
 
@@ -865,6 +867,7 @@
                     recorder.ondataavailable = (event) => {
                         console.log('📊 Получены данные:', event.data.size, 'bytes');
                         if (event.data.size > 0) {
+                            audioChunksRef.current.push(event.data); // Добавляем в ref
                             setAudioChunks(prev => {
                                 const newChunks = [...prev, event.data];
                                 console.log('💾 Всего chunks:', newChunks.length);
@@ -931,36 +934,27 @@
             const stopRecording = () => {
                 console.log('🛑 Останавливаем запись...');
                 if (mediaRecorder && isRecording) {
-                    // Создаём переменную для хранения chunks
-                    let recordedChunks = [];
-                    
                     mediaRecorder.onstop = () => {
-                        console.log('⏹️ Запись остановлена, chunks:', recordedChunks.length);
+                        console.log('⏹️ Запись остановлена, chunks:', audioChunksRef.current.length);
                         
                         // Останавливаем все аудио треки
                         if (mediaRecorder.stream) {
                             mediaRecorder.stream.getTracks().forEach(track => track.stop());
                         }
                         
-                        // Отправляем сообщение если есть данные
-                        if (recordedChunks.length > 0) {
+                        // Отправляем сообщение если есть данные из ref
+                        if (audioChunksRef.current.length > 0) {
                             console.log('📤 Создаём blob и отправляем...');
-                            const audioBlob = new Blob(recordedChunks, { type: 'audio/webm' });
+                            const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
                             sendVoiceMessage(audioBlob);
                         } else {
                             console.warn('⚠️ Нет данных для отправки!');
                         }
                         
                         setAudioChunks([]);
+                        audioChunksRef.current = []; // Очищаем ref
                         setRecordingTime(0);
                     };
-                    
-                    // Сохраняем текущие chunks перед остановкой
-                    setAudioChunks(prev => {
-                        recordedChunks = [...prev];
-                        console.log('💾 Сохранили chunks:', recordedChunks.length);
-                        return prev;
-                    });
                     
                     mediaRecorder.stop();
                     setIsRecording(false);
