@@ -834,8 +834,15 @@
                 try {
                     console.log('🎙️ Запускаем запись...');
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    const recorder = new MediaRecorder(stream);
-                    console.log('✅ MediaRecorder создан');
+                    
+                    // Настройки для меньшего размера файла
+                    const options = {
+                        mimeType: 'audio/webm;codecs=opus',
+                        audioBitsPerSecond: 16000 // Низкое качество для меньшего размера
+                    };
+                    
+                    const recorder = new MediaRecorder(stream, options);
+                    console.log('✅ MediaRecorder создан, mimeType:', recorder.mimeType);
                     
                     setMediaRecorder(recorder);
                     setAudioChunks([]);
@@ -844,7 +851,15 @@
 
                     // Запускаем таймер
                     recordingIntervalRef.current = setInterval(() => {
-                        setRecordingTime(prev => prev + 1);
+                        setRecordingTime(prev => {
+                            const newTime = prev + 1;
+                            // Автоматически останавливаем после 10 секунд
+                            if (newTime >= 10) {
+                                console.log('⏱️ Достигнут лимит 10 секунд, останавливаем');
+                                stopRecording();
+                            }
+                            return newTime;
+                        });
                     }, 1000);
 
                     recorder.ondataavailable = (event) => {
