@@ -832,8 +832,10 @@
             // Функции для голосовых сообщений
             const startRecording = async () => {
                 try {
+                    console.log('🎙️ Запускаем запись...');
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     const recorder = new MediaRecorder(stream);
+                    console.log('✅ MediaRecorder создан');
                     
                     setMediaRecorder(recorder);
                     setAudioChunks([]);
@@ -846,14 +848,20 @@
                     }, 1000);
 
                     recorder.ondataavailable = (event) => {
+                        console.log('📊 Получены данные:', event.data.size, 'bytes');
                         if (event.data.size > 0) {
-                            setAudioChunks(prev => [...prev, event.data]);
+                            setAudioChunks(prev => {
+                                const newChunks = [...prev, event.data];
+                                console.log('💾 Всего chunks:', newChunks.length);
+                                return newChunks;
+                            });
                         }
                     };
 
                     recorder.start();
+                    console.log('▶️ Запись началась');
                 } catch (error) {
-                    console.error('Ошибка доступа к микрофону:', error);
+                    console.error('❌ Ошибка доступа к микрофону:', error);
                     alert('Не удалось получить доступ к микрофону');
                 }
             };
@@ -906,24 +914,38 @@
             };
 
             const stopRecording = () => {
+                console.log('🛑 Останавливаем запись...');
                 if (mediaRecorder && isRecording) {
+                    // Создаём переменную для хранения chunks
+                    let recordedChunks = [];
+                    
                     mediaRecorder.onstop = () => {
+                        console.log('⏹️ Запись остановлена, chunks:', recordedChunks.length);
+                        
                         // Останавливаем все аудио треки
                         if (mediaRecorder.stream) {
                             mediaRecorder.stream.getTracks().forEach(track => track.stop());
                         }
                         
-                        // Отправляем сообщение
-                        setAudioChunks(prevChunks => {
-                            if (prevChunks.length > 0) {
-                                const audioBlob = new Blob(prevChunks, { type: 'audio/webm' });
-                                sendVoiceMessage(audioBlob);
-                            }
-                            return [];
-                        });
+                        // Отправляем сообщение если есть данные
+                        if (recordedChunks.length > 0) {
+                            console.log('📤 Создаём blob и отправляем...');
+                            const audioBlob = new Blob(recordedChunks, { type: 'audio/webm' });
+                            sendVoiceMessage(audioBlob);
+                        } else {
+                            console.warn('⚠️ Нет данных для отправки!');
+                        }
                         
+                        setAudioChunks([]);
                         setRecordingTime(0);
                     };
+                    
+                    // Сохраняем текущие chunks перед остановкой
+                    setAudioChunks(prev => {
+                        recordedChunks = [...prev];
+                        console.log('💾 Сохранили chunks:', recordedChunks.length);
+                        return prev;
+                    });
                     
                     mediaRecorder.stop();
                     setIsRecording(false);

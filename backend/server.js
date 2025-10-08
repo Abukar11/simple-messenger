@@ -30,7 +30,8 @@ const io = socketIo(server, {
     origin: process.env.NODE_ENV === 'production' ? allowedOrigins : "*",
     methods: ["GET", "POST"],
     credentials: true
-  }
+  },
+  maxHttpBufferSize: 10e6 // 10MB для голосовых сообщений в base64
 });
 
 // Middleware
