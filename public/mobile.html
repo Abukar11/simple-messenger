@@ -1081,12 +1081,12 @@
                                 )}
                                 
                                 {/* Обычное текстовое сообщение */}
-                                {message.type !== 'voice' && (
+                                {message.type !== 'voice' && !message.audioData && !message.audioUrl && (
                                     <div className="message-text">{message.text}</div>
                                 )}
                                 
-                                {/* Голосовое сообщение */}
-                                {message.type === 'voice' && (message.audioUrl || message.audioData) && (
+                                {/* Голосовое сообщение - показываем если есть audioData/audioUrl ИЛИ type=voice */}
+                                {((message.type === 'voice') || message.audioData || message.audioUrl) && (
                                     <div className="voice-message">
                                         <div className="voice-player">
                                             <button 
@@ -1099,7 +1099,7 @@
                                             <div className="voice-waveform">
                                                 <div className="voice-progress" style={{width: playingAudio ? '100%' : '0%'}}></div>
                                             </div>
-                                            <span className="voice-duration">🎤 {message.duration || '0:00'}</span>
+                                            <span className="voice-duration">🎤 {message.duration || message.text || 'Голосовое сообщение'}</span>
                                         </div>
                                     </div>
                                 )}
