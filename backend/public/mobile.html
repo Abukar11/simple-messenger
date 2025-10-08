@@ -933,9 +933,20 @@
 
             const stopRecording = () => {
                 console.log('🛑 Останавливаем запись...');
+                console.log('📊 Текущее состояние chunks:', {
+                    refLength: audioChunksRef.current.length,
+                    stateLength: audioChunks.length,
+                    mediaRecorderState: mediaRecorder?.state
+                });
+                
                 if (mediaRecorder && isRecording) {
                     mediaRecorder.onstop = () => {
-                        console.log('⏹️ Запись остановлена, chunks:', audioChunksRef.current.length);
+                        console.log('⏹️ Запись остановлена!');
+                        console.log('📊 Chunks после остановки:', {
+                            refLength: audioChunksRef.current.length,
+                            refSizes: audioChunksRef.current.map(c => c.size),
+                            totalSize: audioChunksRef.current.reduce((sum, c) => sum + c.size, 0)
+                        });
                         
                         // Останавливаем все аудио треки
                         if (mediaRecorder.stream) {
@@ -946,9 +957,10 @@
                         if (audioChunksRef.current.length > 0) {
                             console.log('📤 Создаём blob и отправляем...');
                             const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                            console.log('💾 Blob создан:', audioBlob.size, 'bytes');
                             sendVoiceMessage(audioBlob);
                         } else {
-                            console.warn('⚠️ Нет данных для отправки!');
+                            console.error('❌ НЕТ ДАННЫХ ДЛЯ ОТПРАВКИ! audioChunksRef.current пустой!');
                         }
                         
                         setAudioChunks([]);
