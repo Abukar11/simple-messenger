@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,12 +12,14 @@
             margin: 50px auto;
             padding: 20px;
         }
+
         button {
             padding: 15px 30px;
             font-size: 16px;
             margin: 10px;
             cursor: pointer;
         }
+
         #log {
             border: 1px solid #ccc;
             padding: 10px;
@@ -26,20 +29,22 @@
             font-family: monospace;
             font-size: 12px;
         }
+
         .recording {
             background: red;
             color: white;
         }
     </style>
 </head>
+
 <body>
     <h1>🎤 Тест голосовых сообщений</h1>
-    
+
     <button id="recordBtn">🎙️ Начать запись</button>
     <button id="playBtn" disabled>▶️ Воспроизвести</button>
     <button id="sendBtn" disabled>📤 Отправить на сервер</button>
     <button id="clearBtn">🗑️ Очистить лог</button>
-    
+
     <h3>Лог:</h3>
     <div id="log"></div>
 
@@ -49,61 +54,61 @@
         let audioChunks = [];
         let audioBlob;
         let isRecording = false;
-        
+
         const recordBtn = document.getElementById('recordBtn');
         const playBtn = document.getElementById('playBtn');
         const sendBtn = document.getElementById('sendBtn');
         const clearBtn = document.getElementById('clearBtn');
         const logDiv = document.getElementById('log');
-        
+
         function log(message) {
             const time = new Date().toLocaleTimeString();
             logDiv.innerHTML += `[${time}] ${message}<br>`;
             logDiv.scrollTop = logDiv.scrollHeight;
             console.log(message);
         }
-        
+
         recordBtn.onclick = async () => {
             if (!isRecording) {
                 try {
                     log('🎙️ Запрашиваем доступ к микрофону...');
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     log('✅ Доступ получен');
-                    
+
                     const options = {
                         mimeType: 'audio/webm;codecs=opus',
                         audioBitsPerSecond: 96000 // Отличное качество (96kbps)
                     };
-                    
+
                     mediaRecorder = new MediaRecorder(stream, options);
                     log(`✅ MediaRecorder создан: ${mediaRecorder.mimeType}`);
-                    
+
                     audioChunks = [];
-                    
+
                     mediaRecorder.ondataavailable = (event) => {
                         if (event.data.size > 0) {
                             audioChunks.push(event.data);
                             log(`📊 Получен chunk: ${event.data.size} bytes`);
                         }
                     };
-                    
+
                     mediaRecorder.onstop = () => {
                         log('⏹️ Запись остановлена');
                         audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                         log(`💾 Создан blob: ${audioBlob.size} bytes`);
                         playBtn.disabled = false;
                         sendBtn.disabled = false;
-                        
+
                         // Останавливаем треки
                         stream.getTracks().forEach(track => track.stop());
                     };
-                    
+
                     mediaRecorder.start();
                     isRecording = true;
                     recordBtn.textContent = '⏹️ Остановить';
                     recordBtn.classList.add('recording');
                     log('▶️ Запись началась');
-                    
+
                 } catch (error) {
                     log(`❌ Ошибка: ${error.message}`);
                 }
@@ -114,7 +119,7 @@
                 recordBtn.classList.remove('recording');
             }
         };
-        
+
         playBtn.onclick = () => {
             if (audioBlob) {
                 log('▶️ Воспроизведение...');
@@ -124,22 +129,22 @@
                 audio.onended = () => log('✅ Воспроизведение завершено');
             }
         };
-        
+
         sendBtn.onclick = async () => {
             if (!audioBlob) return;
-            
+
             log('📤 Конвертируем в base64...');
             const reader = new FileReader();
             reader.onloadend = () => {
                 const base64 = reader.result;
                 log(`✅ Base64 создан: ${base64.length} символов`);
-                
+
                 // Подключаемся к Socket.io
                 const socket = io();
-                
+
                 socket.on('connect', () => {
                     log('🔌 Подключено к серверу');
-                    
+
                     const message = {
                         username: 'Тестер',
                         text: '🎤 Тестовое голосовое',
@@ -151,28 +156,29 @@
                             minute: '2-digit'
                         })
                     };
-                    
+
                     log('📨 Отправляем сообщение на сервер...');
                     socket.emit('sendMessage', message);
                     log('✅ Отправлено!');
                 });
-                
+
                 socket.on('newMessage', (msg) => {
                     log(`📩 Получено сообщение: ${msg.username} - тип: ${msg.type}`);
                 });
-                
+
                 socket.on('error', (error) => {
                     log(`❌ Ошибка сервера: ${error.message}`);
                 });
             };
             reader.readAsDataURL(audioBlob);
         };
-        
+
         clearBtn.onclick = () => {
             logDiv.innerHTML = '';
         };
-        
+
         log('✅ Страница загружена, готово к тестированию');
     </script>
 </body>
+
 </html>

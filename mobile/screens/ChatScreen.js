@@ -36,7 +36,7 @@ export default function ChatScreen({ route }) {
   const [typingUsers, setTypingUsers] = useState([]);
   const [showEmojiPanel, setShowEmojiPanel] = useState(false);
   const [isDarkTheme, setIsDarkTheme] = useState(true); // По умолчанию тёмная тема
-  
+
   // State для голосовых сообщений
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -58,17 +58,17 @@ export default function ChatScreen({ route }) {
 
   useEffect(() => {
     console.log('🔄 Начинаем подключение к серверу:', SERVER_URL);
-    
+
     let connectionTimeout;
     let maxRetries = 3;
     let retryCount = 0;
-    
+
     const connectWithRetry = () => {
       if (retryCount >= maxRetries) {
         setErrorMessage('Не удалось подключиться к серверу после нескольких попыток');
         return;
       }
-      
+
       // Подключаемся к серверу
       socketRef.current = io(SERVER_URL, {
         timeout: 15000, // 15 секунд таймаут
@@ -105,7 +105,7 @@ export default function ChatScreen({ route }) {
         clearTimeout(connectionTimeout);
         setIsConnected(false);
         retryCount++;
-        
+
         if (retryCount < maxRetries) {
           setErrorMessage(`Ошибка подключения. Попытка ${retryCount}/${maxRetries}...`);
           setTimeout(connectWithRetry, 3000); // Повторяем через 3 сек
@@ -119,7 +119,7 @@ export default function ChatScreen({ route }) {
         console.log('❌ Отключен от сервера. Причина:', reason);
         setIsConnected(false);
         setErrorMessage('Соединение потеряно');
-        
+
         // Автоматическое переподключение через 5 секунд
         setTimeout(() => {
           if (!isConnected) {
@@ -130,7 +130,7 @@ export default function ChatScreen({ route }) {
         }, 5000);
       });
     };
-    
+
     // Начинаем подключение
     connectWithRetry();
 
@@ -202,7 +202,7 @@ export default function ChatScreen({ route }) {
       if (connectionTimeout) {
         clearTimeout(connectionTimeout);
       }
-      
+
       // Отключаем сокет
       if (socketRef.current) {
         socketRef.current.disconnect();
@@ -246,11 +246,11 @@ export default function ChatScreen({ route }) {
     console.log('🔄 Принудительное переподключение...');
     setErrorMessage('Переподключение...');
     setIsConnected(false);
-    
+
     if (socketRef.current) {
       socketRef.current.disconnect();
     }
-    
+
     // Небольшая задержка перед переподключением
     setTimeout(() => {
       // Пересоздаём подключение
@@ -259,7 +259,7 @@ export default function ChatScreen({ route }) {
         transports: ['websocket', 'polling'],
         forceNew: true
       });
-      
+
       // Обработчики событий (копируем основные)
       socketRef.current.on('connect', () => {
         console.log('✅ Переподключен к серверу');
@@ -267,25 +267,25 @@ export default function ChatScreen({ route }) {
         setErrorMessage('');
         socketRef.current.emit('userJoin', username);
       });
-      
+
       socketRef.current.on('connect_error', (error) => {
         console.error('❌ Ошибка переподключения:', error);
         setErrorMessage('Не удалось переподключиться');
       });
-      
+
       // Добавляем остальные обработчики
       socketRef.current.on('messageHistory', (history) => {
         setMessages(history);
       });
-      
+
       socketRef.current.on('newMessage', (message) => {
         setMessages(prev => [...prev, message]);
       });
-      
+
       socketRef.current.on('userJoined', (data) => {
         setUserCount(data.userCount);
       });
-      
+
       socketRef.current.on('userLeft', (data) => {
         setUserCount(data.userCount);
       });
@@ -414,16 +414,16 @@ export default function ChatScreen({ route }) {
         {!isMyMessage && (
           <Text style={styles.messageUsername}>{item.username}</Text>
         )}
-        
+
         {/* Обычное текстовое сообщение */}
         {item.type !== 'voice' && (
           <Text style={styles.messageText}>{item.text}</Text>
         )}
-        
+
         {/* Голосовое сообщение */}
         {item.type === 'voice' && item.audioUrl && (
           <View style={styles.voiceMessage}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.voicePlayButton}
               onPress={() => playVoiceMessage(item.audioUrl)}
             >
@@ -434,7 +434,7 @@ export default function ChatScreen({ route }) {
             </View>
           </View>
         )}
-        
+
         <Text style={styles.messageTime}>{item.time}</Text>
       </View>
     );
@@ -445,10 +445,10 @@ export default function ChatScreen({ route }) {
       {/* Статус подключения */}
       <View style={isDarkTheme ? styles.statusBarDark : styles.statusBar}>
         <Text style={styles.statusText}>
-          {isConnected 
-            ? `🟢 Онлайн • ${userCount} чел.` 
-            : errorMessage 
-              ? '🔴 Ошибка подключения' 
+          {isConnected
+            ? `🟢 Онлайн • ${userCount} чел.`
+            : errorMessage
+              ? '🔴 Ошибка подключения'
               : '🟡 Подключение...'}
         </Text>
         <TouchableOpacity style={styles.themeToggle} onPress={toggleTheme}>
@@ -468,7 +468,7 @@ export default function ChatScreen({ route }) {
       {errorMessage ? (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>⚠️ {errorMessage}</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.retryButton}
             onPress={forceReconnect}
           >

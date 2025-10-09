@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#2196F3">
@@ -333,9 +334,17 @@
         }
 
         @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
         }
 
         .voice-recording-panel {
@@ -382,7 +391,7 @@
 
         .voice-control-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         }
 
         .voice-message {
@@ -534,7 +543,9 @@
                 gap: 8px;
             }
 
-            .emoji-toggle, .voice-button, .send-button {
+            .emoji-toggle,
+            .voice-button,
+            .send-button {
                 width: 45px;
                 height: 45px;
                 font-size: 18px;
@@ -567,7 +578,9 @@
                 font-size: 18px;
             }
 
-            .emoji-toggle, .voice-button, .send-button {
+            .emoji-toggle,
+            .voice-button,
+            .send-button {
                 width: 40px;
                 height: 40px;
                 font-size: 16px;
@@ -686,7 +699,7 @@
             const [typingUsers, setTypingUsers] = useState([]);
             const [showEmojiPanel, setShowEmojiPanel] = useState(false);
             const [isDarkTheme, setIsDarkTheme] = useState(false);
-            
+
             // State для голосовых сообщений
             const [isRecording, setIsRecording] = useState(false);
             const [recordingTime, setRecordingTime] = useState(0);
@@ -835,16 +848,16 @@
                 try {
                     console.log('🎙️ Запускаем запись...');
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    
+
                     // Настройки для отличного качества
                     const options = {
                         mimeType: 'audio/webm;codecs=opus',
                         audioBitsPerSecond: 96000 // Отличное качество (96kbps)
                     };
-                    
+
                     const recorder = new MediaRecorder(stream, options);
                     console.log('✅ MediaRecorder создан, mimeType:', recorder.mimeType);
-                    
+
                     setMediaRecorder(recorder);
                     setAudioChunks([]);
                     audioChunksRef.current = []; // Очищаем ref
@@ -894,7 +907,7 @@
                             hour: '2-digit',
                             minute: '2-digit'
                         });
-                        
+
                         // Отправляем через Socket.io с base64 данными
                         const voiceMessage = {
                             username: currentUser,
@@ -936,12 +949,12 @@
                 if (mediaRecorder && isRecording) {
                     mediaRecorder.onstop = () => {
                         console.log('⏹️ Запись остановлена, chunks:', audioChunksRef.current.length);
-                        
+
                         // Останавливаем все аудио треки
                         if (mediaRecorder.stream) {
                             mediaRecorder.stream.getTracks().forEach(track => track.stop());
                         }
-                        
+
                         // Отправляем сообщение если есть данные из ref
                         if (audioChunksRef.current.length > 0) {
                             console.log('📤 Создаём blob и отправляем...');
@@ -950,12 +963,12 @@
                         } else {
                             console.warn('⚠️ Нет данных для отправки!');
                         }
-                        
+
                         setAudioChunks([]);
                         audioChunksRef.current = []; // Очищаем ref
                         setRecordingTime(0);
                     };
-                    
+
                     mediaRecorder.stop();
                     setIsRecording(false);
                     clearInterval(recordingIntervalRef.current);
@@ -967,7 +980,7 @@
                 setRecordingTime(0);
                 setIsRecording(false);
                 clearInterval(recordingIntervalRef.current);
-                
+
                 if (mediaRecorder) {
                     mediaRecorder.stream.getTracks().forEach(track => track.stop());
                 }
@@ -982,7 +995,7 @@
                     }
 
                     const audio = new Audio(audioUrl);
-                    
+
                     // Обработка ошибок загрузки
                     audio.onerror = (e) => {
                         console.error('Ошибка воспроизведения:', e);
@@ -998,7 +1011,7 @@
                         console.error('Ошибка при запуске:', err);
                         alert('Не удалось воспроизвести аудио');
                     });
-                    
+
                     setPlayingAudio(audio);
                 } catch (error) {
                     console.error('Ошибка playVoiceMessage:', error);

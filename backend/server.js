@@ -54,9 +54,9 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ 
+const upload = multer({
   storage: storage,
-  limits: { 
+  limits: {
     fileSize: 5 * 1024 * 1024 // Лимит 5MB
   },
   fileFilter: function (req, file, cb) {
@@ -161,10 +161,10 @@ app.post('/api/upload-voice', upload.single('voice'), (req, res) => {
     }
 
     const audioUrl = `/audio/${req.file.filename}`;
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       audioUrl: audioUrl,
-      filename: req.file.filename 
+      filename: req.file.filename
     });
   } catch (error) {
     console.error('Ошибка загрузки аудио:', error);
