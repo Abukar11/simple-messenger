@@ -942,14 +942,14 @@
                             duration: voiceMessage.duration
                         });
                         socketRef.current.emit('sendMessage', voiceMessage);
-                        
+
                         // После отправки сбрасываем состояние и фокусируемся на поле ввода
                         setIsRecording(false);
                         setAudioChunks([]);
                         audioChunksRef.current = [];
                         setRecordingTime(0);
                         finalRecordingTimeRef.current = 0; // Очищаем ref
-                        
+
                         // Фокус на поле ввода текста
                         setTimeout(() => {
                             const inputField = document.querySelector('.input-field');
@@ -990,10 +990,10 @@
                     clearInterval(recordingIntervalRef.current);
                     const finalTime = finalRecordingTimeRef.current; // Сохраняем для использования в onstop
                     console.log('⏱️ Финальное время записи:', finalTime, 'секунд');
-                    
+
                     setIsRecording(false); // Сразу устанавливаем false чтобы панель исчезла
                     setRecordingTime(0); // Сбрасываем таймер UI
-                    
+
                     // ПОТОМ устанавливаем callback и останавливаем recorder
                     mediaRecorder.onstop = () => {
                         console.log('⏹️ Запись остановлена!');
