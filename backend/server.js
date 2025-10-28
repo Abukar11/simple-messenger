@@ -1,4 +1,7 @@
 const express = require('express');
+const sqlite3 = require('sqlite3').verbose();
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
@@ -6,9 +9,127 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
+
 // Создаем приложение Express
 const app = express();
 const server = http.createServer(app);
+
+// Инициализация базы данных SQLite
+const db = new sqlite3.Database(path.join(__dirname, 'messenger.db'), (err) => {
+  if (err) {
+    console.error('Ошибка подключения к базе данных:', err.message);
+  } else {
+    console.log('✅ SQLite база данных подключена');
+  }
+});
+
+// Создаем таблицу пользователей, если не существует
+db.run(`CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT UNIQUE NOT NULL,
+  password TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)`);
+
+// Создаем таблицу сообщений, если не существует
+db.run(`CREATE TABLE IF NOT EXISTS messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  room TEXT NOT NULL,
+  username TEXT NOT NULL,
+  text TEXT,
+  type TEXT,
+  attachmentUrl TEXT,
+  attachmentType TEXT,
+  filename TEXT,
+  mimetype TEXT,
+  audioUrl TEXT,
+  duration REAL,
+  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+)`);
+
+// JWT секрет
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
+// API: регистрация пользователя
+app.post('/api/register', async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password || typeof username !== 'string' || typeof password !== 'string') {
+    return res.status(400).json({ error: 'Имя пользователя и пароль обязательны' });
+  }
+  if (username.length < 3 || username.length > 50) {
+    return res.status(400).json({ error: 'Имя пользователя должно быть от 3 до 50 символов' });
+  }
+  if (password.length < 4 || password.length > 100) {
+    return res.status(400).json({ error: 'Пароль должен быть от 4 до 100 символов' });
+  }
+  // Хэшируем пароль
+  const hash = await bcrypt.hash(password, 10);
+  db.run('INSERT INTO users (username, password) VALUES (?, ?)', [username, hash], function(err) {
+    if (err) {
+      if (err.message.includes('UNIQUE')) {
+        return res.status(409).json({ error: 'Пользователь с таким именем уже существует' });
+      }
+      return res.status(500).json({ error: 'Ошибка сервера при регистрации' });
+    }
+    // Генерируем JWT
+    const token = jwt.sign({ id: this.lastID, username }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ success: true, token, username });
+  });
+});
+
+// API: вход пользователя
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Имя пользователя и пароль обязательны' });
+  }
+  db.get('SELECT * FROM users WHERE username = ?', [username], async (err, user) => {
+    if (err) return res.status(500).json({ error: 'Ошибка сервера при входе' });
+    if (!user) return res.status(401).json({ error: 'Пользователь не найден' });
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) return res.status(401).json({ error: 'Неверный пароль' });
+    // Генерируем JWT
+    const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ success: true, token, username: user.username });
+  });
+});
+
+// Middleware для проверки JWT
+function authMiddleware(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  if (!authHeader) return res.status(401).json({ error: 'Нет токена авторизации' });
+  const token = authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Неверный формат токена' });
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ error: 'Неверный или истёкший токен' });
+    req.user = user;
+    next();
+  });
+}
+
+// API: отправка сообщения (POST /api/message)
+app.post('/api/message', authMiddleware, (req, res) => {
+  const { room, text, type, attachmentUrl, attachmentType, filename, mimetype, audioUrl, duration } = req.body;
+  const username = req.user.username;
+  if (!room || !username) return res.status(400).json({ error: 'Комната и имя пользователя обязательны' });
+  // Сохраняем сообщение в базе
+  db.run(`INSERT INTO messages (room, username, text, type, attachmentUrl, attachmentType, filename, mimetype, audioUrl, duration) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [room, username, text || '', type || 'text', attachmentUrl || null, attachmentType || null, filename || null, mimetype || null, audioUrl || null, duration || null],
+    function(err) {
+      if (err) return res.status(500).json({ error: 'Ошибка сервера при сохранении сообщения' });
+      res.json({ success: true, id: this.lastID });
+    }
+  );
+});
+
+// API: получение истории сообщений (GET /api/messages?room=roomName)
+app.get('/api/messages', authMiddleware, (req, res) => {
+  const room = req.query.room;
+  if (!room) return res.status(400).json({ error: 'Комната обязательна' });
+  db.all('SELECT * FROM messages WHERE room = ? ORDER BY timestamp ASC LIMIT 100', [room], (err, rows) => {
+    if (err) return res.status(500).json({ error: 'Ошибка сервера при получении сообщений' });
+    res.json({ success: true, messages: rows });
+  });
+});
 
 // Настройка CORS для Socket.io
 const allowedOrigins = [
@@ -37,7 +158,28 @@ const io = socketIo(server, {
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' })); // Увеличиваем лимит для аудио
-app.use(express.static('public')); // Добавляем обслуживание статических файлов
+
+// Отключение кэширования для всех статических файлов
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+});
+
+// Используем абсолютный путь к папке public для надёжной отдачи статики
+app.use(express.static(path.join(__dirname, 'public'))); // Добавляем обслуживание статических файлов
+
+// Отдельный маршрут для favicon — перенаправляем на существующую иконку в /public/icons
+app.get('/favicon.ico', (req, res) => {
+  const icoPath = path.join(__dirname, 'public', 'icons', 'icon-192.svg');
+  // Если хотите, можно заменить на .png/.ico файл в папке public
+  if (fs.existsSync(icoPath)) {
+    return res.sendFile(icoPath);
+  }
+  // Если файла нет — вернём 204 No Content чтобы убрать клиентский 404
+  return res.status(204).end();
+});
 
 // Настройка multer для загрузки аудио файлов
 const storage = multer.diskStorage({
@@ -69,8 +211,31 @@ const upload = multer({
   }
 });
 
-// Хранилище сообщений в памяти (для простоты)
-let messages = [];
+// Настройка multer для общих вложений (изображения, файлы, аудио)
+const uploadsStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = path.join(__dirname, 'public', 'uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname) || '';
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, `${uniqueSuffix}${ext}`);
+  }
+});
+
+const uploadAll = multer({
+  storage: uploadsStorage,
+  limits: {
+    fileSize: 15 * 1024 * 1024 // по умолчанию 15MB
+  }
+});
+
+// Хранилище сообщений по комнатам
+let roomMessages = {}; // { roomName: [messages] }
 let activeUsers = [];
 let messageReactions = new Map(); // Храним реакции по ID сообщения
 
@@ -101,25 +266,36 @@ function validateMessage(data) {
     return { valid: false, error: 'Неверное имя пользователя' };
   }
 
-  // Если это не голосовое сообщение — проверяем текст сообщения
+  // Если это не голосовое сообщение — проверяем текст или наличие вложения
   if (data.type !== 'voice') {
-    if (!data.text || typeof data.text !== 'string') {
+    // Разрешаем сообщение без текста, если есть вложение (attachmentUrl) или аудио URL
+    if ((!data.text || typeof data.text !== 'string') && !data.attachmentUrl && !data.audioUrl) {
       return { valid: false, error: 'Пустое сообщение' };
     }
+    if (data.text && typeof data.text === 'string') {
+      const txt = data.text.trim();
+      if (txt.length === 0 && !data.attachmentUrl && !data.audioUrl) {
+        return { valid: false, error: 'Пустое сообщение' };
+      }
+      if (txt.length > 1000) {
+        return { valid: false, error: 'Сообщение должно быть от 1 до 1000 символов' };
+      }
+    }
   } else {
-    // Для voice-сообщений допускаем отсутствие текста, но требуем аудиоданные (audioData или audioUrl)
+    // Для voice: допускаем отсутствие текста, требуем аудиоданные (audioData или audioUrl)
     if (!data.audioData && !data.audioUrl) {
       return { valid: false, error: 'Отсутствуют аудиоданные для голосового сообщения' };
     }
+    // Если текст присутствует — только проверяем максимальную длину
+    if (data.text && typeof data.text === 'string') {
+      const txt = data.text.trim();
+      if (txt.length > 1000) return { valid: false, error: 'Сообщение слишком длинное' };
+    }
   }
 
-  // Ограничения на длину
+  // Ограничения на длину username
   if (data.username.trim().length === 0 || data.username.length > 50) {
     return { valid: false, error: 'Имя должно быть от 1 до 50 символов' };
-  }
-
-  if (data.text.trim().length === 0 || data.text.length > 1000) {
-    return { valid: false, error: 'Сообщение должно быть от 1 до 1000 символов' };
   }
 
   return { valid: true };
@@ -146,10 +322,12 @@ function checkRateLimit(username) {
 
 // Простой API endpoint для проверки работы сервера
 app.get('/api/status', (req, res) => {
+  // Подсчитываем общее количество сообщений по всем комнатам
+  const totalMessages = Object.values(roomMessages).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
   res.json({
     message: 'Простой мессенджер - сервер работает!',
     users: activeUsers.length,
-    messages: messages.length
+    messages: totalMessages
   });
 });
 
@@ -172,6 +350,27 @@ app.post('/api/upload-voice', upload.single('voice'), (req, res) => {
   }
 });
 
+// Общий роут для загрузки файлов/изображений/аудио (dev: локально в public/uploads)
+app.post('/api/upload', uploadAll.single('file'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Файл не загружен' });
+    }
+
+    const fileUrl = `/uploads/${req.file.filename}`;
+    res.json({
+      success: true,
+      url: fileUrl,
+      filename: req.file.originalname,
+      storedFilename: req.file.filename,
+      mimetype: req.file.mimetype
+    });
+  } catch (error) {
+    console.error('Ошибка загрузки файла:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
 // Главная страница - отдаем HTML файл
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
@@ -181,10 +380,44 @@ app.get('/', (req, res) => {
 io.on('connection', (socket) => {
   console.log(`👤 Новый пользователь подключился: ${socket.id}`);
 
-  // Отправляем историю сообщений новому пользователю
-  socket.emit('messageHistory', messages);
+  // Пользователь должен выбрать комнату (room)
+  socket.on('joinRoom', ({ username, room }) => {
+    try {
+      if (!username || typeof username !== 'string' || !room || typeof room !== 'string') {
+        socket.emit('error', { message: 'Неверные данные для входа в комнату' });
+        return;
+      }
+      const cleanUsername = username.trim();
+      const cleanRoom = room.trim();
+      if (cleanUsername.length === 0 || cleanUsername.length > 50 || cleanRoom.length === 0 || cleanRoom.length > 100) {
+        socket.emit('error', { message: 'Некорректное имя пользователя или комнаты' });
+        return;
+      }
+      // Проверяем, не занято ли имя в этой комнате
+      const existingUser = activeUsers.find(user => user.username.toLowerCase() === cleanUsername.toLowerCase() && user.room === cleanRoom);
+      if (existingUser) {
+        socket.emit('error', { message: 'Это имя уже используется в этой комнате. Выберите другое.' });
+        return;
+      }
+      const sanitizedUsername = sanitizeMessage(cleanUsername);
+      socket.username = sanitizedUsername;
+      socket.room = cleanRoom;
+      activeUsers.push({ id: socket.id, username: sanitizedUsername, room: cleanRoom });
+      socket.join(cleanRoom);
+      // Отправляем историю сообщений по комнате
+      if (!roomMessages[cleanRoom]) roomMessages[cleanRoom] = [];
+      socket.emit('messageHistory', roomMessages[cleanRoom]);
+      // Уведомляем всех в комнате о новом пользователе
+      io.to(cleanRoom).emit('userJoined', { username: sanitizedUsername, userCount: activeUsers.filter(u => u.room === cleanRoom).length, room: cleanRoom });
+      socket.emit('joinSuccess', { username: sanitizedUsername, userCount: activeUsers.filter(u => u.room === cleanRoom).length, room: cleanRoom });
+      console.log(`✅ ${sanitizedUsername} присоединился к комнате ${cleanRoom}`);
+    } catch (error) {
+      console.error('Ошибка при входе пользователя в комнату:', error);
+      socket.emit('error', { message: 'Ошибка сервера при входе в комнату' });
+    }
+  });
 
-  // Обработка входа пользователя в чат
+  // Для обратной совместимости (старый клиент)
   socket.on('userJoin', (username) => {
     try {
       // Валидация имени пользователя
@@ -225,7 +458,20 @@ io.on('connection', (socket) => {
   // Обработка отправки сообщения
   socket.on('sendMessage', (data) => {
     try {
-      // Валидация данных
+      // Требуем, чтобы пользователь был зарегистрирован через userJoin
+      if (!socket.username) {
+        socket.emit('error', { message: 'Неавторизованный пользователь. Сначала выполните вход.' });
+        return;
+      }
+
+
+      // Определяем комнату для сообщения
+      const usernameToUse = socket.username;
+      const roomToUse = socket.room || (data.room && typeof data.room === 'string' ? data.room : 'main');
+      data.username = usernameToUse;
+      data.room = roomToUse;
+
+      // Валидация данных (теперь username уже установлен)
       const validation = validateMessage(data);
       if (!validation.valid) {
         socket.emit('error', { message: validation.error });
@@ -233,7 +479,7 @@ io.on('connection', (socket) => {
       }
 
       // Проверяем rate limiting по имени пользователя
-      const rateLimitCheck = checkRateLimit(data.username);
+      const rateLimitCheck = checkRateLimit(usernameToUse);
       if (!rateLimitCheck.allowed) {
         socket.emit('error', {
           message: `Слишком много сообщений! Попробуйте через ${rateLimitCheck.resetIn} секунд. (${rateLimitCheck.remaining}/${MESSAGE_LIMIT})`,
@@ -261,14 +507,19 @@ io.on('connection', (socket) => {
         id: Date.now(),
         username: sanitizeMessage(data.username.trim()),
         // Для голосовых сообщений текст может быть пустым или служебным
-        text: data.type === 'voice' ? sanitizeMessage((data.text && data.text.trim()) || '🎤 Голосовое сообщение') : sanitizeMessage(data.text.trim()),
+        text: data.type === 'voice' ? sanitizeMessage((data.text && data.text.trim()) || '🎤 Голосовое сообщение') : sanitizeMessage((data.text && data.text.trim()) || ''),
         timestamp: new Date().toISOString(),
         time: new Date().toLocaleTimeString('ru-RU', {
           hour: '2-digit',
           minute: '2-digit'
         }),
         type: data.type || 'text',
-        // Если клиент передал base64 аудио или URL — сохраняем в сообщении для пересылки
+        // Поддержка вложений: attachmentUrl (images/files), attachmentType, filename, mimetype
+        attachmentUrl: data.attachmentUrl || null,
+        attachmentType: data.attachmentType || null,
+        filename: data.filename || null,
+        mimetype: data.mimetype || null,
+        // Существующая поддержка аудио
         audioData: data.audioData || null,
         audioUrl: data.audioUrl || null,
         duration: data.duration || null
@@ -286,18 +537,17 @@ io.on('connection', (socket) => {
         });
       }
 
-      // Сохраняем сообщение
-      messages.push(message);
 
-      // Ограничиваем историю последними 100 сообщениями
-      if (messages.length > 100) {
-        messages = messages.slice(-100);
+      // Сохраняем сообщение в нужной комнате
+      if (!roomMessages[roomToUse]) roomMessages[roomToUse] = [];
+      roomMessages[roomToUse].push(message);
+      // Ограничиваем историю последними 100 сообщениями в комнате
+      if (roomMessages[roomToUse].length > 100) {
+        roomMessages[roomToUse] = roomMessages[roomToUse].slice(-100);
       }
-
-      console.log(`💬 ${message.username}: ${message.text} (${rateLimitCheck.remaining}/${MESSAGE_LIMIT} оставшихся)`);
-
-      // Отправляем сообщение всем подключенным пользователям
-      io.emit('newMessage', message);
+      console.log(`💬 [${roomToUse}] ${message.username}: ${message.text} (${rateLimitCheck.remaining}/${MESSAGE_LIMIT} оставшихся)`);
+      // Отправляем сообщение только в комнату
+      io.to(roomToUse).emit('newMessage', message);
 
     } catch (error) {
       console.error('Ошибка обработки сообщения:', error);
@@ -359,20 +609,18 @@ io.on('connection', (socket) => {
     // НЕ очищаем rate limiting здесь - пусть работает по времени
     // userMessageLimits остается в памяти и очищается автоматически через TIME_WINDOW
 
-    if (socket.username) {
+    if (socket.username && socket.room) {
       // Удаляем пользователя из списка активных
       activeUsers = activeUsers.filter(user => user.id !== socket.id);
-
-      console.log(`👋 ${socket.username} покинул чат`);
-
-      // Уведомляем всех об уходе пользователя
-      io.emit('userLeft', {
+      console.log(`👋 ${socket.username} покинул комнату ${socket.room}`);
+      // Уведомляем только комнату об уходе пользователя
+      io.to(socket.room).emit('userLeft', {
         username: socket.username,
-        userCount: activeUsers.length
+        userCount: activeUsers.filter(u => u.room === socket.room).length,
+        room: socket.room
       });
-
       // Автоматически останавливаем печать при отключении
-      socket.broadcast.emit('userStoppedTyping', {
+      socket.to(socket.room).emit('userStoppedTyping', {
         username: socket.username
       });
     } else {

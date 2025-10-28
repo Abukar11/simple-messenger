@@ -1,117 +1,39 @@
 <!DOCTYPE html>
 <html lang="ru">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#2196F3">
-    <title>🏠‍⬛ Raven</title>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#2E7D32" />
+    <title>Raven — мобильная версия</title>
     <script src="/socket.io/socket.io.js"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            /* Светлая тема */
-            --bg-gradient-start: #667eea;
-            --bg-gradient-end: #764ba2;
-            --app-bg: #ffffff;
-            --header-bg: #2196F3;
-            --header-text: #ffffff;
-            --status-bg: #f5f5f5;
-            --status-text: #666666;
-            --message-bg: #fafafa;
-            --message-my-bg: #2196F3;
-            --message-my-text: #ffffff;
-            --message-other-bg: #ffffff;
-            --message-other-text: #333333;
-            --message-border: #e0e0e0;
-            --input-bg: #ffffff;
-            --input-text: #333333;
-            --input-border: #e0e0e0;
-            --button-bg: #2196F3;
-            --button-hover: #1976D2;
-            --voice-btn-bg: #4CAF50;
-            --voice-btn-hover: #45a049;
-            --shadow: rgba(0, 0, 0, 0.1);
-        }
-
-        [data-theme="dark"] {
-            /* Темная тема */
-            --bg-gradient-start: #1a1a2e;
-            --bg-gradient-end: #16213e;
-            --app-bg: #0f3460;
-            --header-bg: #16213e;
-            --header-text: #e94560;
-            --status-bg: #1a1a2e;
-            --status-text: #a0a0a0;
-            --message-bg: #16213e;
-            --message-my-bg: #e94560;
-            --message-my-text: #ffffff;
-            --message-other-bg: #1a1a2e;
-            --message-other-text: #ffffff;
-            --message-border: #2d3561;
-            --input-bg: #1a1a2e;
-            --input-text: #ffffff;
-            --input-border: #2d3561;
-            --button-bg: #e94560;
-            --button-hover: #c23550;
-            --voice-btn-bg: #00d9ff;
-            --voice-btn-hover: #00b8d4;
-            --shadow: rgba(0, 0, 0, 0.3);
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
-            min-height: 100vh;
-            min-height: -webkit-fill-available;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            transition: background 0.3s ease;
-        }
-
-        html {
-            height: -webkit-fill-available;
-        }
-
-        .app-container {
-            width: 100%;
-            max-width: 800px;
-            height: 90vh;
-            background: var(--app-bg);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px var(--shadow);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            transition: all 0.3s ease;
-        }
-
-        .header {
-            background: var(--header-bg);
-            color: var(--header-text);
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 2px 10px var(--shadow);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.3s ease;
-        }
+  </head>
+  <body>
+    <div id="root"></div>
+    <script src="/main.js?v=2"></script>
+  </body>
+</html>
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="theme-color" content="#2E7D32" />
+        <title>Raven — мобильная версия</title>
+        <script src="/socket.io/socket.io.js"></script>
+        <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+        <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    </head>
+    <body>
+        <div id="root"></div>
+        <script src="/main.js?v=2"></script>
+    </body>
+</html>
 
         .header-content {
             flex: 1;
@@ -396,7 +318,7 @@
 
         .voice-message {
             background: #e3f2fd;
-            border: 1px solid #2196F3;
+            border: 1px solid #2E7D32;
             border-radius: 15px;
             padding: 10px;
             margin: 5px 0;
@@ -413,7 +335,7 @@
         }
 
         .voice-play-btn {
-            background: #2196F3;
+            background: #2E7D32;
             color: white;
             border: none;
             border-radius: 50%;
@@ -448,7 +370,7 @@
 
         .voice-progress {
             height: 100%;
-            background: linear-gradient(90deg, #2196F3, #21CBF3);
+            background: linear-gradient(90deg, #2E7D32, #60AD66);
             border-radius: 15px;
             transition: width 0.1s;
         }
@@ -473,7 +395,7 @@
         .login-button {
             width: 100%;
             padding: 15px;
-            background: #2196F3;
+            background: #2E7D32;
             color: white;
             border: none;
             border-radius: 25px;
@@ -653,7 +575,7 @@
         .typing-animation span {
             width: 6px;
             height: 6px;
-            background: #2196F3;
+            background: #2E7D32;
             border-radius: 50%;
             animation: typingBounce 1.4s infinite ease-in-out;
         }
