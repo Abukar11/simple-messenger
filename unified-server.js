@@ -7,10 +7,10 @@ const fs = require('fs');
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+    }
 });
 
 const PORT = process.env.PORT || 3333;
@@ -24,16 +24,16 @@ app.use(express.static(path.join(__dirname, '../')));
 
 // API маршруты
 app.get('/', (req, res) => {
-  res.json({
-    message: "Простой мессенджер - сервер работает!",
-    users: users.length,
-    messages: messages.length
-  });
+    res.json({
+        message: "Простой мессенджер - сервер работает!",
+        users: users.length,
+        messages: messages.length
+    });
 });
 
 // Главная страница чата
 app.get('/chat', (req, res) => {
-  const chatHTML = `
+    const chatHTML = `
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -69,7 +69,7 @@ app.get('/chat', (req, res) => {
             overflow: hidden;
         }
         .header {
-            background: linear-gradient(135deg, #2196F3, #21CBF3);
+            background: linear-gradient(135deg, #2E7D32, #60AD66);
             color: white;
             padding: 20px;
             text-align: center;
@@ -120,12 +120,12 @@ app.get('/chat', (req, res) => {
             transition: border-color 0.3s;
         }
         .login-screen input:focus {
-            border-color: #2196F3;
+            border-color: #2E7D32;
         }
         .login-screen button {
             width: 100%;
             padding: 15px;
-            background: linear-gradient(135deg, #2196F3, #21CBF3);
+            background: linear-gradient(135deg, #2E7D32, #60AD66);
             color: white;
             border: none;
             border-radius: 10px;
@@ -186,7 +186,7 @@ app.get('/chat', (req, res) => {
         }
         .message.own {
             margin-left: auto;
-            background: linear-gradient(135deg, #2196F3, #21CBF3);
+            background: linear-gradient(135deg, #2E7D32, #60AD66);
             color: white;
             border-radius: 18px 18px 5px 18px;
         }
@@ -225,12 +225,12 @@ app.get('/chat', (req, res) => {
             transition: border-color 0.3s;
         }
         .input-area input:focus {
-            border-color: #2196F3;
+            border-color: #2E7D32;
         }
         .send-btn {
             width: 44px;
             height: 44px;
-            background: linear-gradient(135deg, #2196F3, #21CBF3);
+            background: linear-gradient(135deg, #2E7D32, #60AD66);
             color: white;
             border: none;
             border-radius: 22px;
@@ -469,41 +469,41 @@ app.get('/chat', (req, res) => {
 </body>
 </html>
   `;
-  
-  res.send(chatHTML);
+
+    res.send(chatHTML);
 });
 
 // Socket.IO обработчики
 io.on('connection', (socket) => {
-  console.log('👤 Пользователь подключился:', socket.id);
+    console.log('👤 Пользователь подключился:', socket.id);
 
-  // Присоединение пользователя
-  socket.on('userJoin', (username) => {
-    console.log('📝 Пользователь присоединился:', username);
-    
-    // Сохраняем информацию о пользователе
-    socket.username = username;
-    users.push({
-      id: socket.id,
-      username: username,
-      joinedAt: new Date()
-    });
+    // Присоединение пользователя
+    socket.on('userJoin', (username) => {
+        console.log('📝 Пользователь присоединился:', username);
 
-    // Отправляем историю сообщений
-    socket.emit('messageHistory', messages);
+        // Сохраняем информацию о пользователе
+        socket.username = username;
+        users.push({
+            id: socket.id,
+            username: username,
+            joinedAt: new Date()
+        });
 
-    // Уведомляем всех о новом пользователе
-    io.emit('userJoined', {
-      username: username,
-      users: users
-    });
+        // Отправляем историю сообщений
+        socket.emit('messageHistory', messages);
 
-    // Подтверждаем успешное присоединение
-    socket.emit('joinSuccess', {
-      users: users
-    });
+        // Уведомляем всех о новом пользователе
+        io.emit('userJoined', {
+            username: username,
+            users: users
+        });
 
-    console.log(\`👥 Пользователей онлайн: \${users.length}\`);
+        // Подтверждаем успешное присоединение
+        socket.emit('joinSuccess', {
+            users: users
+        });
+
+        console.log(\`👥 Пользователей онлайн: \${users.length}\`);
   });
 
   // Получение сообщения
@@ -550,7 +550,7 @@ io.on('connection', (socket) => {
 
 // Запуск сервера
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Единый сервер мессенджера запущен на 0.0.0.0:${PORT}`);
+  console.log(`🚀 Единый сервер мессенджера запущен на 0.0.0.0: ${ PORT }`);
   console.log(`📡 Локально: http://localhost:${PORT}/chat`);
-  console.log(`📱 В сети: http://192.168.0.30:${PORT}/chat`);
-});
+            console.log(`📱 В сети: http://192.168.0.30:${PORT}/chat`);
+    });

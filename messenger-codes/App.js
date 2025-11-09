@@ -9,11 +9,11 @@ const Stack = createStackNavigator();
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator 
+      <Stack.Navigator
         initialRouteName="Login"
         screenOptions={{
           headerStyle: {
-            backgroundColor: '#2196F3',
+            backgroundColor: '#2E7D32',
           },
           headerTintColor: '#fff',
           headerTitleStyle: {
@@ -21,18 +21,18 @@ export default function App() {
           },
         }}
       >
-        <Stack.Screen 
-          name="Login" 
+        <Stack.Screen
+          name="Login"
           component={LoginScreen}
-          options={{ 
+          options={{
             title: 'Простой чат',
-            headerShown: true 
+            headerShown: true
           }}
         />
-        <Stack.Screen 
-          name="Chat" 
+        <Stack.Screen
+          name="Chat"
           component={ChatScreen}
-          options={({ route }) => ({ 
+          options={({ route }) => ({
             title: `Общий чат - ${route.params?.username || 'Гость'}`,
             headerLeft: null, // Убираем кнопку "Назад"
           })}

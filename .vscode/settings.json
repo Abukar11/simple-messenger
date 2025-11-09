@@ -7,7 +7,7 @@
   "editor.insertSpaces": true,
   "files.autoSave": "afterDelay",
   "editor.formatOnSave": true,
-  "workbench.colorTheme": "GitHub Dark Colorblind (Beta)",
+  "workbench.colorTheme": "GitHub Dark High Contrast",
   "terminal.integrated.fontSize": 13,
   "editor.fontSize": 14,
   "explorer.openEditors.visible": 10,

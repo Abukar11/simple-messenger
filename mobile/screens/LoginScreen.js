@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ACCENT_COLOR } from '../theme';
 import {
   View,
   Text,
@@ -10,36 +12,50 @@ import {
   Platform,
 } from 'react-native';
 
+
 export default function LoginScreen({ navigation }) {
   const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [room, setRoom] = useState('main');
+  const [isRegister, setIsRegister] = useState(false);
 
-  const handleJoinChat = () => {
+  const SERVER_URL = 'https://simple-messenger-7x2u.onrender.com';
+
+  const handleAuth = async () => {
     const trimmedUsername = username.trim();
+    const trimmedPassword = password.trim();
+    const trimmedRoom = room.trim();
 
-    if (trimmedUsername.length === 0) {
-      Alert.alert('Ошибка', 'Пожалуйста, введите ваше имя');
+    if (trimmedUsername.length < 3 || trimmedUsername.length > 50) {
+      Alert.alert('Ошибка', 'Имя должно быть от 3 до 50 символов');
       return;
     }
-
-    if (trimmedUsername.length < 2) {
-      Alert.alert('Ошибка', 'Имя должно содержать минимум 2 символа');
+    if (trimmedPassword.length < 4 || trimmedPassword.length > 100) {
+      Alert.alert('Ошибка', 'Пароль должен быть от 4 до 100 символов');
       return;
     }
-
-    if (trimmedUsername.length > 50) {
-      Alert.alert('Ошибка', 'Имя не должно превышать 50 символов');
+    if (trimmedRoom.length === 0 || trimmedRoom.length > 100) {
+      Alert.alert('Ошибка', 'Название комнаты обязательно и не должно превышать 100 символов');
       return;
     }
-
-    // Проверяем на недопустимые символы
-    const invalidChars = /[<>"/\\&]/;
-    if (invalidChars.test(trimmedUsername)) {
-      Alert.alert('Ошибка', 'Имя содержит недопустимые символы');
-      return;
+    try {
+      const url = isRegister ? `${SERVER_URL}/api/register` : `${SERVER_URL}/api/login`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: trimmedUsername, password: trimmedPassword })
+      });
+      const data = await res.json();
+      if (!data.success || !data.token) {
+        Alert.alert('Ошибка', data.error || 'Ошибка авторизации');
+        return;
+      }
+      // Сохраняем токен
+      await AsyncStorage.setItem('jwt', data.token);
+      navigation.navigate('Chat', { username: trimmedUsername, room: trimmedRoom, token: data.token });
+    } catch (e) {
+      Alert.alert('Ошибка', 'Ошибка сети или сервера');
     }
-
-    // Переходим на экран чата
-    navigation.navigate('Chat', { username: trimmedUsername });
   };
 
   return (
@@ -51,24 +67,54 @@ export default function LoginScreen({ navigation }) {
         <Text style={styles.title}>Добро пожаловать!</Text>
         <Text style={styles.subtitle}>Как вас зовут?</Text>
 
+
         <TextInput
           style={styles.input}
           placeholder="Введите ваше имя..."
           value={username}
           onChangeText={setUsername}
-          maxLength={20}
-          autoCapitalize="words"
+          maxLength={50}
+          autoCapitalize="none"
+          autoCorrect={false}
+          returnKeyType="next"
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Пароль"
+          value={password}
+          onChangeText={setPassword}
+          maxLength={100}
+          secureTextEntry
+          autoCapitalize="none"
+          autoCorrect={false}
+          returnKeyType="next"
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Название комнаты (например, main, family, work...)"
+          value={room}
+          onChangeText={setRoom}
+          maxLength={100}
+          autoCapitalize="none"
           autoCorrect={false}
           returnKeyType="join"
           onSubmitEditing={handleJoinChat}
         />
 
         <TouchableOpacity
-          style={[styles.button, username.trim().length < 2 && styles.buttonDisabled]}
-          onPress={handleJoinChat}
-          disabled={username.trim().length < 2}
+          style={[styles.button, (username.trim().length < 3 || password.trim().length < 4) && styles.buttonDisabled]}
+          onPress={handleAuth}
+          disabled={username.trim().length < 3 || password.trim().length < 4}
         >
-          <Text style={styles.buttonText}>Войти в чат</Text>
+          <Text style={styles.buttonText}>{isRegister ? 'Зарегистрироваться' : 'Войти'}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: '#eee' }]}
+          onPress={() => setIsRegister(!isRegister)}
+        >
+          <Text style={[styles.buttonText, { color: ACCENT_COLOR }]}>
+            {isRegister ? 'У меня уже есть аккаунт' : 'Нет аккаунта? Зарегистрироваться'}
+          </Text>
         </TouchableOpacity>
 
         <Text style={styles.info}>
@@ -94,7 +140,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#2196F3',
+    color: ACCENT_COLOR,
     marginBottom: 10,
     textAlign: 'center',
   },
@@ -118,7 +164,7 @@ const styles = StyleSheet.create({
   button: {
     width: '100%',
     height: 50,
-    backgroundColor: '#2196F3',
+    backgroundColor: ACCENT_COLOR,
     borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',

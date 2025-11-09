@@ -35,19 +35,19 @@ export default function ChatScreen({ route }) {
   const [messageText, setMessageText] = useState('');
   const [userCount, setUserCount] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
-  
+
   const socketRef = useRef(null);
   const flatListRef = useRef(null);
 
   useEffect(() => {
     // Подключаемся к серверу
     socketRef.current = io(SERVER_URL);
-    
+
     // Обработка подключения
     socketRef.current.on('connect', () => {
       console.log('Подключен к серверу');
       setIsConnected(true);
-      
+
       // Сообщаем серверу о входе пользователя
       socketRef.current.emit('userJoin', username);
     });
@@ -106,7 +106,7 @@ export default function ChatScreen({ route }) {
 
   const sendMessage = () => {
     if (messageText.trim().length === 0) return;
-    
+
     if (!isConnected) {
       Alert.alert('Ошибка', 'Нет соединения с сервером');
       return;
@@ -123,7 +123,7 @@ export default function ChatScreen({ route }) {
 
   const renderMessage = ({ item }) => {
     const isMyMessage = item.username === username;
-    
+
     return (
       <View style={[
         styles.messageContainer,
@@ -139,7 +139,7 @@ export default function ChatScreen({ route }) {
   };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
   },
   myMessage: {
     alignSelf: 'flex-end',
-    backgroundColor: '#2196F3',
+    backgroundColor: '#2E7D32',
   },
   otherMessage: {
     alignSelf: 'flex-start',
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
   sendButton: {
     width: 40,
     height: 40,
-    backgroundColor: '#2196F3',
+    backgroundColor: '#2E7D32',
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',

@@ -63,7 +63,7 @@ app.post('/api/register', async (req, res) => {
   }
   // Хэшируем пароль
   const hash = await bcrypt.hash(password, 10);
-  db.run('INSERT INTO users (username, password) VALUES (?, ?)', [username, hash], function(err) {
+  db.run('INSERT INTO users (username, password) VALUES (?, ?)', [username, hash], function (err) {
     if (err) {
       if (err.message.includes('UNIQUE')) {
         return res.status(409).json({ error: 'Пользователь с таким именем уже существует' });
@@ -114,7 +114,7 @@ app.post('/api/message', authMiddleware, (req, res) => {
   // Сохраняем сообщение в базе
   db.run(`INSERT INTO messages (room, username, text, type, attachmentUrl, attachmentType, filename, mimetype, audioUrl, duration) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [room, username, text || '', type || 'text', attachmentUrl || null, attachmentType || null, filename || null, mimetype || null, audioUrl || null, duration || null],
-    function(err) {
+    function (err) {
       if (err) return res.status(500).json({ error: 'Ошибка сервера при сохранении сообщения' });
       res.json({ success: true, id: this.lastID });
     }

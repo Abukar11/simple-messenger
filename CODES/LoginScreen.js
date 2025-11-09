@@ -29,14 +29,14 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
+    <KeyboardAvoidingView
+      style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.content}>
         <Text style={styles.title}>Добро пожаловать!</Text>
         <Text style={styles.subtitle}>Как вас зовут?</Text>
-        
+
         <TextInput
           style={styles.input}
           placeholder="Введите ваше имя..."
@@ -48,15 +48,15 @@ export default function LoginScreen({ navigation }) {
           returnKeyType="join"
           onSubmitEditing={handleJoinChat}
         />
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={[styles.button, username.trim().length < 2 && styles.buttonDisabled]}
           onPress={handleJoinChat}
           disabled={username.trim().length < 2}
         >
           <Text style={styles.buttonText}>Войти в чат</Text>
         </TouchableOpacity>
-        
+
         <Text style={styles.info}>
           Это простой мессенджер для общения{'\n'}
           Все сообщения видны всем участникам
@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#2196F3',
+    color: '#2E7D32',
     marginBottom: 10,
     textAlign: 'center',
   },
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
   button: {
     width: '100%',
     height: 50,
-    backgroundColor: '#2196F3',
+    backgroundColor: '#2E7D32',
     borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',

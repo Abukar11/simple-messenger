@@ -59,7 +59,7 @@ app.get('/chat', (req, res) => {
             overflow: hidden;
         }
         .header {
-            background: linear-gradient(135deg, #2196F3, #21CBF3);
+            background: linear-gradient(135deg, #2E7D32, #60AD66);
             color: white;
             padding: 20px;
             text-align: center;
@@ -86,12 +86,12 @@ app.get('/chat', (req, res) => {
             -webkit-border-radius: 10px;
         }
         .login-screen input:focus {
-            border-color: #2196F3;
+            border-color: #2E7D32;
         }
         .login-screen button {
             width: 100%;
             padding: 15px;
-            background: #2196F3;
+            background: #2E7D32;
             color: white;
             border: none;
             border-radius: 10px;
@@ -124,7 +124,7 @@ app.get('/chat', (req, res) => {
         }
         .message.own {
             margin-left: auto;
-            background: #2196F3;
+            background: #2E7D32;
             color: white;
             border-radius: 18px 18px 5px 18px;
         }
@@ -359,9 +359,9 @@ io.on('connection', (socket) => {
 
     socket.on('userJoin', (username) => {
         console.log('Пользователь присоединился:', username);
-        
+
         socket.username = username;
-        
+
         if (!users.find(u => u.id === socket.id)) {
             users.push({
                 id: socket.id,
@@ -383,7 +383,7 @@ io.on('connection', (socket) => {
         };
 
         messages.push(message);
-        
+
         if (messages.length > 100) {
             messages = messages.slice(-50);
         }
@@ -394,7 +394,7 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         console.log('Пользователь отключился:', socket.id);
-        
+
         users = users.filter(user => user.id !== socket.id);
         socket.broadcast.emit('userLeft', { users: users });
     });

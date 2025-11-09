@@ -2,7 +2,7 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 
-const a                            ${messages.map(msg => `
+const a                            ${ messages.map(msg => `
                                 <div class="message ${msg.username === currentUser ? 'my' : 'other'}">
                                     ${msg.username !== currentUser ? `<div class="username" style="color: ${getUserColor(msg.username)}">${msg.username}</div>` : ''}
                                     <div class="text">${msg.text}</div>
@@ -11,10 +11,10 @@ const a                            ${messages.map(msg => `
                             `).join('')}press();
 const server = http.createServer(app);
 const io = socketIo(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+    }
 });
 
 const PORT = process.env.PORT || 3000;
@@ -29,17 +29,17 @@ app.use(express.json());
 
 // API
 app.get('/api/status', (req, res) => {
-  res.json({ 
-    message: 'Мессенджер работает!', 
-    users: activeUsers.length,
-    messages: messages.length,
-    timestamp: new Date().toISOString()
-  });
+    res.json({
+        message: 'Мессенджер работает!',
+        users: activeUsers.length,
+        messages: messages.length,
+        timestamp: new Date().toISOString()
+    });
 });
 
 // Главная страница
 app.get('/', (req, res) => {
-  res.send(`<!DOCTYPE html>
+    res.send(`<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -56,26 +56,26 @@ app.get('/', (req, res) => {
         .app { width: 100%; max-width: 800px; height: 90vh; background: white;
                border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1);
                overflow: hidden; display: flex; flex-direction: column; }
-        .header { background: #2196F3; color: white; padding: 20px; text-align: center; }
+    .header { background: #2E7D32; color: white; padding: 20px; text-align: center; }
         .status { background: #f5f5f5; padding: 10px 20px; text-align: center; color: #666; }
         .messages { flex: 1; overflow-y: auto; padding: 20px; background: #fafafa; }
         .message { margin-bottom: 15px; padding: 12px 16px; border-radius: 18px; max-width: 70%; animation: fadeIn 0.3s ease-in; }
-        .message.my { background: #2196F3; color: white; margin-left: auto; text-align: right; }
+    .message.my { background: #2E7D32; color: white; margin-left: auto; text-align: right; }
         .message.other { background: white; border: 1px solid #e0e0e0; }
         .username { font-size: 12px; font-weight: bold; margin-bottom: 5px; opacity: 0.7; }
         .text { font-size: 16px; line-height: 1.4; }
         .time { font-size: 11px; margin-top: 5px; opacity: 0.7; }
         .input-area { padding: 20px; background: white; border-top: 1px solid #e0e0e0; display: flex; gap: 10px; }
         .input { flex: 1; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 25px; font-size: 16px; outline: none; }
-        .input:focus { border-color: #2196F3; }
+    .input:focus { border-color: #2E7D32; }
         .emoji-btn { width: 40px; height: 40px; border: none; background: #f0f0f0; border-radius: 50%; font-size: 18px; cursor: pointer; margin-right: 5px; }
         .emoji-btn:hover { background: #e0e0e0; }
-        .send { width: 50px; height: 50px; border-radius: 50%; border: none; background: #2196F3; color: white; font-size: 20px; cursor: pointer; }
+    .send { width: 50px; height: 50px; border-radius: 50%; border: none; background: #2E7D32; color: white; font-size: 20px; cursor: pointer; }
         .send:hover { background: #1976D2; }
         .send:disabled { background: #ccc; cursor: not-allowed; }
         .login { max-width: 400px; padding: 40px; text-align: center; }
         .login input { width: 100%; padding: 15px 20px; border: 2px solid #e0e0e0; border-radius: 25px; font-size: 18px; text-align: center; margin: 20px 0; outline: none; }
-        .login button { width: 100%; padding: 15px; background: #2196F3; color: white; border: none; border-radius: 25px; font-size: 18px; cursor: pointer; }
+    .login button { width: 100%; padding: 15px; background: #2E7D32; color: white; border: none; border-radius: 25px; font-size: 18px; cursor: pointer; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @media (max-width: 768px) { .app { height: 100vh; border-radius: 0; } .message { max-width: 85%; } }
     </style>
@@ -236,45 +236,45 @@ app.get('/', (req, res) => {
 
 // Socket.io обработка
 io.on('connection', (socket) => {
-  console.log(`👤 Новый пользователь подключился: ${socket.id}`);
-  
-  socket.emit('messageHistory', messages);
-  
-  socket.on('userJoin', (username) => {
-    socket.username = username;
-    activeUsers.push({ id: socket.id, username });
-    console.log(`✅ ${username} присоединился к чату`);
-    io.emit('userJoined', { username, userCount: activeUsers.length });
-    socket.emit('joinSuccess', { username, userCount: activeUsers.length });
-  });
-  
-  socket.on('sendMessage', (data) => {
-    const message = {
-      id: Date.now(),
-      username: data.username,
-      text: data.text,
-      timestamp: new Date().toISOString(),
-      time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
-    };
-    
-    messages.push(message);
-    if (messages.length > 100) messages = messages.slice(-100);
-    
-    console.log(`💬 ${message.username}: ${message.text}`);
-    io.emit('newMessage', message);
-  });
-  
-  socket.on('disconnect', () => {
-    if (socket.username) {
-      activeUsers = activeUsers.filter(user => user.id !== socket.id);
-      console.log(`👋 ${socket.username} покинул чат`);
-      io.emit('userLeft', { username: socket.username, userCount: activeUsers.length });
-    }
-  });
+    console.log(`👤 Новый пользователь подключился: ${socket.id}`);
+
+    socket.emit('messageHistory', messages);
+
+    socket.on('userJoin', (username) => {
+        socket.username = username;
+        activeUsers.push({ id: socket.id, username });
+        console.log(`✅ ${username} присоединился к чату`);
+        io.emit('userJoined', { username, userCount: activeUsers.length });
+        socket.emit('joinSuccess', { username, userCount: activeUsers.length });
+    });
+
+    socket.on('sendMessage', (data) => {
+        const message = {
+            id: Date.now(),
+            username: data.username,
+            text: data.text,
+            timestamp: new Date().toISOString(),
+            time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+        };
+
+        messages.push(message);
+        if (messages.length > 100) messages = messages.slice(-100);
+
+        console.log(`💬 ${message.username}: ${message.text}`);
+        io.emit('newMessage', message);
+    });
+
+    socket.on('disconnect', () => {
+        if (socket.username) {
+            activeUsers = activeUsers.filter(user => user.id !== socket.id);
+            console.log(`👋 ${socket.username} покинул чат`);
+            io.emit('userLeft', { username: socket.username, userCount: activeUsers.length });
+        }
+    });
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Мессенджер запущен на порту ${PORT}`);
-  console.log(`📡 Локально: http://localhost:${PORT}`);
-  console.log(`🌍 В продакшене будет доступен по Railway URL`);
+    console.log(`🚀 Мессенджер запущен на порту ${PORT}`);
+    console.log(`📡 Локально: http://localhost:${PORT}`);
+    console.log(`🌍 В продакшене будет доступен по Railway URL`);
 });

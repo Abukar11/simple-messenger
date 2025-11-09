@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
-  <head>
+
+<head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -10,599 +11,625 @@
     <script src="/socket.io/socket.io.js"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  </head>
-  <body>
+</head>
+
+<body>
     <div id="root"></div>
     <script src="/main.js?v=2"></script>
-  </body>
+</body>
+
 </html>
 <!DOCTYPE html>
 <html lang="ru">
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="theme-color" content="#2E7D32" />
-        <title>Raven — мобильная версия</title>
-        <script src="/socket.io/socket.io.js"></script>
-        <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-        <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    </head>
-    <body>
-        <div id="root"></div>
-        <script src="/main.js?v=2"></script>
-    </body>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#2E7D32" />
+    <title>Raven — мобильная версия</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+</head>
+
+<body>
+    <div id="root"></div>
+    <script src="/main.js?v=2"></script>
+</body>
+
+</html>
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#2E7D32" />
+    <title>Raven — мобильная версия</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+</head>
+
+<body>
+    <div id="root"></div>
+    <script src="/main.js?v=2"></script>
+</body>
+
 </html>
 
-        .header-content {
-            flex: 1;
-            text-align: center;
-        }
-
-        .theme-toggle {
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: var(--header-text);
-            padding: 8px 12px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 20px;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .theme-toggle:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: scale(1.05);
-        }
-
-        .status {
-            background: var(--status-bg);
-            padding: 10px 20px;
-            text-align: center;
-            color: var(--status-text);
-            border-bottom: 1px solid var(--message-border);
-            transition: all 0.3s ease;
-        }
-
-        .messages-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            background: var(--message-bg);
-            transition: all 0.3s ease;
-        }
-
-        .message {
-            margin-bottom: 15px;
-            padding: 12px 16px;
-            border-radius: 18px;
-            max-width: 70%;
-            word-wrap: break-word;
-            animation: fadeIn 0.3s ease-in;
-        }
-
-        .message.my {
-            background: var(--message-my-bg);
-            color: var(--message-my-text);
-            margin-left: auto;
-            text-align: right;
-        }
-
-        .message.other {
-            background: var(--message-other-bg);
-            color: var(--message-other-text);
-            border: 1px solid var(--message-border);
-        }
-
-        .message-username {
-            font-size: 12px;
-            font-weight: bold;
-            margin-bottom: 5px;
-            opacity: 0.8;
-        }
-
-        .message-text {
-            font-size: 16px;
-            line-height: 1.4;
-        }
-
-        .message-time {
-            font-size: 11px;
-            margin-top: 5px;
-            opacity: 0.7;
-        }
-
-        .input-container {
-            padding: 20px;
-            background: var(--input-bg);
-            border-top: 1px solid var(--input-border);
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            transition: all 0.3s ease;
-        }
-
-        .emoji-panel {
-            background: var(--input-bg);
-            padding: 15px;
-            border-radius: 15px;
-            border: 1px solid var(--input-border);
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            max-height: 150px;
-            overflow-y: auto;
-            animation: slideDown 0.2s ease-out;
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .emoji-button {
-            font-size: 24px;
-            padding: 8px;
-            cursor: pointer;
-            border-radius: 8px;
-            transition: all 0.2s;
-            user-select: none;
-        }
-
-        .emoji-button:hover {
-            background: #e0e0e0;
-            transform: scale(1.2);
-        }
-
-        .input-row {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .emoji-toggle {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            border: 2px solid var(--input-border);
-            background: var(--input-bg);
-            color: var(--input-text);
-            font-size: 20px;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .emoji-toggle:hover {
-            background: var(--status-bg);
-            border-color: var(--button-bg);
-            transform: scale(1.05);
-        }
-
-        .input-field {
-            flex: 1;
-            padding: 12px 16px;
-            border: 2px solid var(--input-border);
-            border-radius: 25px;
-            font-size: 16px;
-            outline: none;
-            transition: border-color 0.2s;
-            background: var(--input-bg);
-            color: var(--input-text);
-        }
-
-        .input-field:focus {
-            border-color: var(--button-bg);
-        }
-
-        .send-button {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            border: none;
-            background: var(--button-bg);
-            color: white;
-            font-size: 20px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .send-button:hover {
-            background: var(--button-hover);
-        }
-
-        .send-button:disabled {
-            background: #888;
-            cursor: not-allowed;
-        }
-
-        /* Стили для голосовых сообщений */
-        .voice-button {
-            background: var(--voice-btn-bg);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            font-size: 20px;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .voice-button:hover {
-            background: var(--voice-btn-hover);
-            transform: scale(1.1);
-        }
-
-        .voice-button.recording {
-            background: #f44336;
-            animation: pulse 1s infinite;
-        }
-
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-            }
-
-            50% {
-                transform: scale(1.1);
-            }
-
-            100% {
-                transform: scale(1);
-            }
-        }
-
-        .voice-recording-panel {
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            animation: slideDown 0.3s ease-out;
-        }
-
-        .voice-timer {
-            font-weight: bold;
-            color: #856404;
-            font-size: 18px;
-        }
-
-        .voice-controls {
-            display: flex;
-            gap: 10px;
-        }
-
-        .voice-control-btn {
-            padding: 8px 15px;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-
-        .voice-send-btn {
-            background: #28a745;
-            color: white;
-        }
-
-        .voice-cancel-btn {
-            background: #dc3545;
-            color: white;
-        }
-
-        .voice-control-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-        }
-
-        .voice-message {
-            background: #e3f2fd;
-            border: 1px solid #2E7D32;
-            border-radius: 15px;
-            padding: 10px;
-            margin: 5px 0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .voice-player {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            width: 100%;
-        }
-
-        .voice-play-btn {
-            background: #2E7D32;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-
-        .voice-play-btn:hover {
-            background: #1976D2;
-            transform: scale(1.1);
-        }
-
-        .voice-duration {
-            font-size: 12px;
-            color: #666;
-            min-width: 40px;
-        }
-
-        .voice-waveform {
-            flex: 1;
-            height: 30px;
-            background: #f0f0f0;
-            border-radius: 15px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .voice-progress {
-            height: 100%;
-            background: linear-gradient(90deg, #2E7D32, #60AD66);
-            border-radius: 15px;
-            transition: width 0.1s;
-        }
-
-        .login-container {
-            max-width: 400px;
-            padding: 40px;
-            text-align: center;
-        }
-
-        .login-input {
-            width: 100%;
-            padding: 15px 20px;
-            border: 2px solid #868686;
-            border-radius: 25px;
-            font-size: 18px;
-            text-align: center;
-            margin: 20px 0;
-            outline: none;
-        }
-
-        .login-button {
-            width: 100%;
-            padding: 15px;
-            background: #2E7D32;
-            color: white;
-            border: none;
-            border-radius: 25px;
-            font-size: 18px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .login-button:hover {
-            background: #1976D2;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @media (max-width: 768px) {
-            body {
-                padding: 0;
-                margin: 0;
-                align-items: stretch;
-            }
-
-            .app-container {
-                height: 100vh;
-                height: -webkit-fill-available;
-                max-width: 100%;
-                border-radius: 0;
-                margin: 0;
-                max-height: 100vh;
-                max-height: -webkit-fill-available;
-            }
-
-            .header {
-                padding: 15px;
-                padding-top: max(15px, env(safe-area-inset-top));
-            }
-
-            .header h1 {
-                font-size: 20px;
-            }
-
-            .messages-container {
-                padding: 10px;
-                padding-bottom: 5px;
-            }
-
-            .message {
-                max-width: 80%;
-                font-size: 15px;
-            }
-
-            .input-container {
-                padding: 10px;
-                padding-bottom: max(10px, env(safe-area-inset-bottom));
-            }
-
-            .input-row {
-                gap: 8px;
-            }
-
-            .emoji-toggle,
-            .voice-button,
-            .send-button {
-                width: 45px;
-                height: 45px;
-                font-size: 18px;
-                flex-shrink: 0;
-            }
-
-            .input-field {
-                font-size: 16px;
-            }
-
-            .emoji-panel {
-                max-height: 120px;
-            }
-
-            .voice-play-btn {
-                width: 35px;
-                height: 35px;
-                font-size: 16px;
-            }
-
-            .theme-toggle {
-                padding: 6px 10px;
-                font-size: 18px;
-            }
-        }
-
-        /* Дополнительная адаптация для очень маленьких экранов */
-        @media (max-width: 375px) {
-            .header h1 {
-                font-size: 18px;
-            }
-
-            .emoji-toggle,
-            .voice-button,
-            .send-button {
-                width: 40px;
-                height: 40px;
-                font-size: 16px;
-            }
-
-            .input-field {
-                font-size: 14px;
-                padding: 10px 14px;
-            }
-
-            .message {
-                max-width: 85%;
-                font-size: 14px;
-            }
-        }
-
-        /* Адаптация для больших экранов */
-        @media (min-width: 769px) and (max-width: 1024px) {
-            .app-container {
-                max-width: 90%;
-                height: 85vh;
-            }
-        }
-
-        /* Ландшафтная ориентация на мобильных */
-        @media (max-height: 500px) and (orientation: landscape) {
-            .app-container {
-                height: 100vh;
-            }
-
-            .header {
-                padding: 10px 15px;
-            }
-
-            .messages-container {
-                padding: 8px;
-            }
-
-            .input-container {
-                padding: 8px;
-            }
-
-            .emoji-panel {
-                max-height: 80px;
-            }
-        }
-
-        /* Стили для индикатора печати */
-        .typing-indicator {
-            display: flex;
-            align-items: center;
-            padding: 10px 15px;
-            background: rgba(33, 150, 243, 0.1);
-            border-radius: 20px;
-            margin: 5px 0;
-            font-size: 14px;
-            color: #666;
-            font-style: italic;
-        }
-
-        .typing-dots {
-            margin-right: 10px;
-        }
-
-        .typing-animation {
-            display: flex;
-            gap: 3px;
-        }
-
-        .typing-animation span {
-            width: 6px;
-            height: 6px;
-            background: #2E7D32;
-            border-radius: 50%;
-            animation: typingBounce 1.4s infinite ease-in-out;
-        }
-
-        .typing-animation span:nth-child(1) {
-            animation-delay: -0.32s;
-        }
-
-        .typing-animation span:nth-child(2) {
-            animation-delay: -0.16s;
-        }
-
-        @keyframes typingBounce {
-
-            0%,
-            80%,
-            100% {
-                transform: scale(0.8);
-                opacity: 0.5;
-            }
-
-            40% {
-                transform: scale(1);
-                opacity: 1;
-            }
-        }
-    </style>
+.header-content {
+flex: 1;
+text-align: center;
+}
+
+.theme-toggle {
+background: rgba(255, 255, 255, 0.2);
+border: none;
+color: var(--header-text);
+padding: 8px 12px;
+border-radius: 20px;
+cursor: pointer;
+font-size: 20px;
+transition: all 0.3s ease;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+
+.theme-toggle:hover {
+background: rgba(255, 255, 255, 0.3);
+transform: scale(1.05);
+}
+
+.status {
+background: var(--status-bg);
+padding: 10px 20px;
+text-align: center;
+color: var(--status-text);
+border-bottom: 1px solid var(--message-border);
+transition: all 0.3s ease;
+}
+
+.messages-container {
+flex: 1;
+overflow-y: auto;
+padding: 20px;
+background: var(--message-bg);
+transition: all 0.3s ease;
+}
+
+.message {
+margin-bottom: 15px;
+padding: 12px 16px;
+border-radius: 18px;
+max-width: 70%;
+word-wrap: break-word;
+animation: fadeIn 0.3s ease-in;
+}
+
+.message.my {
+background: var(--message-my-bg);
+color: var(--message-my-text);
+margin-left: auto;
+text-align: right;
+}
+
+.message.other {
+background: var(--message-other-bg);
+color: var(--message-other-text);
+border: 1px solid var(--message-border);
+}
+
+.message-username {
+font-size: 12px;
+font-weight: bold;
+margin-bottom: 5px;
+opacity: 0.8;
+}
+
+.message-text {
+font-size: 16px;
+line-height: 1.4;
+}
+
+.message-time {
+font-size: 11px;
+margin-top: 5px;
+opacity: 0.7;
+}
+
+.input-container {
+padding: 20px;
+background: var(--input-bg);
+border-top: 1px solid var(--input-border);
+display: flex;
+flex-direction: column;
+gap: 10px;
+transition: all 0.3s ease;
+}
+
+.emoji-panel {
+background: var(--input-bg);
+padding: 15px;
+border-radius: 15px;
+border: 1px solid var(--input-border);
+display: flex;
+flex-wrap: wrap;
+gap: 8px;
+max-height: 150px;
+overflow-y: auto;
+animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+from {
+opacity: 0;
+transform: translateY(-10px);
+}
+
+to {
+opacity: 1;
+transform: translateY(0);
+}
+}
+
+.emoji-button {
+font-size: 24px;
+padding: 8px;
+cursor: pointer;
+border-radius: 8px;
+transition: all 0.2s;
+user-select: none;
+}
+
+.emoji-button:hover {
+background: #e0e0e0;
+transform: scale(1.2);
+}
+
+.input-row {
+display: flex;
+gap: 10px;
+align-items: center;
+}
+
+.emoji-toggle {
+width: 45px;
+height: 45px;
+border-radius: 50%;
+border: 2px solid var(--input-border);
+background: var(--input-bg);
+color: var(--input-text);
+font-size: 20px;
+cursor: pointer;
+transition: all 0.2s;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+
+.emoji-toggle:hover {
+background: var(--status-bg);
+border-color: var(--button-bg);
+transform: scale(1.05);
+}
+
+.input-field {
+flex: 1;
+padding: 12px 16px;
+border: 2px solid var(--input-border);
+border-radius: 25px;
+font-size: 16px;
+outline: none;
+transition: border-color 0.2s;
+background: var(--input-bg);
+color: var(--input-text);
+}
+
+.input-field:focus {
+border-color: var(--button-bg);
+}
+
+.send-button {
+width: 50px;
+height: 50px;
+border-radius: 50%;
+border: none;
+background: var(--button-bg);
+color: white;
+font-size: 20px;
+cursor: pointer;
+transition: background 0.2s;
+}
+
+.send-button:hover {
+background: var(--button-hover);
+}
+
+.send-button:disabled {
+background: #888;
+cursor: not-allowed;
+}
+
+/* Стили для голосовых сообщений */
+.voice-button {
+background: var(--voice-btn-bg);
+color: white;
+border: none;
+border-radius: 50%;
+width: 50px;
+height: 50px;
+font-size: 20px;
+cursor: pointer;
+transition: all 0.3s;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+
+.voice-button:hover {
+background: var(--voice-btn-hover);
+transform: scale(1.1);
+}
+
+.voice-button.recording {
+background: #f44336;
+animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+0% {
+transform: scale(1);
+}
+
+50% {
+transform: scale(1.1);
+}
+
+100% {
+transform: scale(1);
+}
+}
+
+.voice-recording-panel {
+background: #fff3cd;
+border: 1px solid #ffc107;
+border-radius: 10px;
+padding: 15px;
+margin-bottom: 10px;
+display: flex;
+align-items: center;
+gap: 15px;
+animation: slideDown 0.3s ease-out;
+}
+
+.voice-timer {
+font-weight: bold;
+color: #856404;
+font-size: 18px;
+}
+
+.voice-controls {
+display: flex;
+gap: 10px;
+}
+
+.voice-control-btn {
+padding: 8px 15px;
+border: none;
+border-radius: 20px;
+cursor: pointer;
+font-size: 14px;
+transition: all 0.2s;
+}
+
+.voice-send-btn {
+background: #28a745;
+color: white;
+}
+
+.voice-cancel-btn {
+background: #dc3545;
+color: white;
+}
+
+.voice-control-btn:hover {
+transform: translateY(-2px);
+box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.voice-message {
+background: #e3f2fd;
+border: 1px solid #2E7D32;
+border-radius: 15px;
+padding: 10px;
+margin: 5px 0;
+display: flex;
+align-items: center;
+gap: 10px;
+}
+
+.voice-player {
+display: flex;
+align-items: center;
+gap: 10px;
+width: 100%;
+}
+
+.voice-play-btn {
+background: #2E7D32;
+color: white;
+border: none;
+border-radius: 50%;
+width: 40px;
+height: 40px;
+cursor: pointer;
+display: flex;
+align-items: center;
+justify-content: center;
+transition: all 0.2s;
+}
+
+.voice-play-btn:hover {
+background: #1976D2;
+transform: scale(1.1);
+}
+
+.voice-duration {
+font-size: 12px;
+color: #666;
+min-width: 40px;
+}
+
+.voice-waveform {
+flex: 1;
+height: 30px;
+background: #f0f0f0;
+border-radius: 15px;
+position: relative;
+overflow: hidden;
+}
+
+.voice-progress {
+height: 100%;
+background: linear-gradient(90deg, #2E7D32, #60AD66);
+border-radius: 15px;
+transition: width 0.1s;
+}
+
+.login-container {
+max-width: 400px;
+padding: 40px;
+text-align: center;
+}
+
+.login-input {
+width: 100%;
+padding: 15px 20px;
+border: 2px solid #868686;
+border-radius: 25px;
+font-size: 18px;
+text-align: center;
+margin: 20px 0;
+outline: none;
+}
+
+.login-button {
+width: 100%;
+padding: 15px;
+background: #2E7D32;
+color: white;
+border: none;
+border-radius: 25px;
+font-size: 18px;
+cursor: pointer;
+transition: background 0.2s;
+}
+
+.login-button:hover {
+background: #1976D2;
+}
+
+@keyframes fadeIn {
+from {
+opacity: 0;
+transform: translateY(10px);
+}
+
+to {
+opacity: 1;
+transform: translateY(0);
+}
+}
+
+@media (max-width: 768px) {
+body {
+padding: 0;
+margin: 0;
+align-items: stretch;
+}
+
+.app-container {
+height: 100vh;
+height: -webkit-fill-available;
+max-width: 100%;
+border-radius: 0;
+margin: 0;
+max-height: 100vh;
+max-height: -webkit-fill-available;
+}
+
+.header {
+padding: 15px;
+padding-top: max(15px, env(safe-area-inset-top));
+}
+
+.header h1 {
+font-size: 20px;
+}
+
+.messages-container {
+padding: 10px;
+padding-bottom: 5px;
+}
+
+.message {
+max-width: 80%;
+font-size: 15px;
+}
+
+.input-container {
+padding: 10px;
+padding-bottom: max(10px, env(safe-area-inset-bottom));
+}
+
+.input-row {
+gap: 8px;
+}
+
+.emoji-toggle,
+.voice-button,
+.send-button {
+width: 45px;
+height: 45px;
+font-size: 18px;
+flex-shrink: 0;
+}
+
+.input-field {
+font-size: 16px;
+}
+
+.emoji-panel {
+max-height: 120px;
+}
+
+.voice-play-btn {
+width: 35px;
+height: 35px;
+font-size: 16px;
+}
+
+.theme-toggle {
+padding: 6px 10px;
+font-size: 18px;
+}
+}
+
+/* Дополнительная адаптация для очень маленьких экранов */
+@media (max-width: 375px) {
+.header h1 {
+font-size: 18px;
+}
+
+.emoji-toggle,
+.voice-button,
+.send-button {
+width: 40px;
+height: 40px;
+font-size: 16px;
+}
+
+.input-field {
+font-size: 14px;
+padding: 10px 14px;
+}
+
+.message {
+max-width: 85%;
+font-size: 14px;
+}
+}
+
+/* Адаптация для больших экранов */
+@media (min-width: 769px) and (max-width: 1024px) {
+.app-container {
+max-width: 90%;
+height: 85vh;
+}
+}
+
+/* Ландшафтная ориентация на мобильных */
+@media (max-height: 500px) and (orientation: landscape) {
+.app-container {
+height: 100vh;
+}
+
+.header {
+padding: 10px 15px;
+}
+
+.messages-container {
+padding: 8px;
+}
+
+.input-container {
+padding: 8px;
+}
+
+.emoji-panel {
+max-height: 80px;
+}
+}
+
+/* Стили для индикатора печати */
+.typing-indicator {
+display: flex;
+align-items: center;
+padding: 10px 15px;
+background: rgba(33, 150, 243, 0.1);
+border-radius: 20px;
+margin: 5px 0;
+font-size: 14px;
+color: #666;
+font-style: italic;
+}
+
+.typing-dots {
+margin-right: 10px;
+}
+
+.typing-animation {
+display: flex;
+gap: 3px;
+}
+
+.typing-animation span {
+width: 6px;
+height: 6px;
+background: #2E7D32;
+border-radius: 50%;
+animation: typingBounce 1.4s infinite ease-in-out;
+}
+
+.typing-animation span:nth-child(1) {
+animation-delay: -0.32s;
+}
+
+.typing-animation span:nth-child(2) {
+animation-delay: -0.16s;
+}
+
+@keyframes typingBounce {
+
+0%,
+80%,
+100% {
+transform: scale(0.8);
+opacity: 0.5;
+}
+
+40% {
+transform: scale(1);
+opacity: 1;
+}
+}
+</style>
 </head>
 
 <body>

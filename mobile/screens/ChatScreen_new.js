@@ -11,6 +11,8 @@ import {
   Alert,
 } from 'react-native';
 import io from 'socket.io-client';
+import * as DocumentPicker from 'expo-document-picker';
+import { ACCENT_COLOR } from '../theme';
 
 // Определяем адрес сервера автоматически
 const getServerUrl = () => {
@@ -41,14 +43,14 @@ export default function ChatScreen({ route }) {
 
   useEffect(() => {
     console.log('🔗 Подключение к серверу:', SERVER_URL);
-    
+
     socketRef.current = io(SERVER_URL);
-    
+
     // Подключение к серверу
     socketRef.current.on('connect', () => {
       console.log('✅ Подключен к серверу');
       setIsConnected(true);
-      
+
       // Сообщаем серверу о входе пользователя
       socketRef.current.emit('userJoin', username);
     });
@@ -111,11 +113,61 @@ export default function ChatScreen({ route }) {
     }
   };
 
+  const [uploading, setUploading] = useState(false);
+
+  const pickAndUploadFile = async () => {
+    try {
+      const res = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
+      if (res.type === 'cancel') return;
+
+      setUploading(true);
+
+      const uri = res.uri;
+      const name = res.name || 'file';
+      const mimeType = res.mimeType || 'application/octet-stream';
+
+      const formData = new FormData();
+      // In React Native / Expo, append file like this
+      formData.append('file', {
+        uri,
+        name,
+        type: mimeType,
+      });
+
+      const response = await fetch(`${SERVER_URL}/api/upload`, {
+        method: 'POST',
+        body: formData,
+        // Do not set Content-Type; let fetch set the boundary
+      });
+
+      const json = await response.json();
+      setUploading(false);
+
+      if (json && json.success) {
+        // Emit a message with attachment metadata
+        socketRef.current.emit('sendMessage', {
+          text: '',
+          username,
+          timestamp: new Date().toISOString(),
+          attachmentUrl: json.url,
+          filename: json.filename || json.storedFilename,
+          mimetype: json.mimetype || json.type,
+        });
+      } else {
+        Alert.alert('Ошибка', 'Не удалось загрузить файл');
+      }
+    } catch (err) {
+      setUploading(false);
+      console.error('Upload error', err);
+      Alert.alert('Ошибка', 'Проблема при загрузке файла');
+    }
+  };
+
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
-    return date.toLocaleTimeString('ru-RU', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return date.toLocaleTimeString('ru-RU', {
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
@@ -133,7 +185,7 @@ export default function ChatScreen({ route }) {
   );
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
@@ -169,13 +221,23 @@ export default function ChatScreen({ route }) {
           returnKeyType="send"
           onSubmitEditing={sendMessage}
         />
-        <TouchableOpacity 
-          style={[styles.sendButton, { opacity: message.trim() ? 1 : 0.5 }]}
-          onPress={sendMessage}
-          disabled={!message.trim() || !isConnected}
-        >
-          <Text style={styles.sendButtonText}>➤</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity
+            style={[styles.fileButton, { marginRight: 8 }]}
+            onPress={pickAndUploadFile}
+            disabled={uploading || !isConnected}
+          >
+            <Text style={styles.sendButtonText}>📎</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.sendButton, { opacity: message.trim() ? 1 : 0.5 }]}
+            onPress={sendMessage}
+            disabled={!message.trim() || !isConnected}
+          >
+            <Text style={styles.sendButtonText}>➤</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -210,7 +272,7 @@ const styles = StyleSheet.create({
   },
   ownMessage: {
     alignSelf: 'flex-end',
-    backgroundColor: '#2196F3',
+    backgroundColor: ACCENT_COLOR,
   },
   otherMessage: {
     alignSelf: 'flex-start',
@@ -255,10 +317,20 @@ const styles = StyleSheet.create({
     maxHeight: 100,
   },
   sendButton: {
-    backgroundColor: '#2196F3',
+    backgroundColor: ACCENT_COLOR,
     width: 45,
     height: 45,
     borderRadius: 22.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fileButton: {
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: ACCENT_COLOR,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },

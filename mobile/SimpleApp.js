@@ -1,22 +1,23 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { ACCENT_COLOR } from './theme';
 
 export default function SimpleApp() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>🚀 Simple Messenger</Text>
       <Text style={styles.subtitle}>Приложение запущено успешно!</Text>
-      
+
       <View style={styles.statusContainer}>
         <Text style={styles.statusText}>✅ React Native работает</Text>
         <Text style={styles.statusText}>✅ Expo загружен</Text>
         <Text style={styles.statusText}>✅ Компоненты отображаются</Text>
       </View>
-      
+
       <TouchableOpacity style={styles.button}>
         <Text style={styles.buttonText}>Тест кнопки</Text>
       </TouchableOpacity>
-      
+
       <Text style={styles.info}>
         Если вы видите этот экран, значит основа приложения работает корректно!
       </Text>
@@ -35,7 +36,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#2196F3',
+    color: ACCENT_COLOR,
     marginBottom: 10,
   },
   subtitle: {
@@ -58,7 +59,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   button: {
-    backgroundColor: '#2196F3',
+    backgroundColor: ACCENT_COLOR,
     paddingHorizontal: 30,
     paddingVertical: 15,
     borderRadius: 25,

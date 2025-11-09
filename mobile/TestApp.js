@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { ACCENT_COLOR } from './theme';
 
 export default function TestApp() {
   return (
@@ -21,7 +22,7 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#2196F3',
+    color: ACCENT_COLOR,
     textAlign: 'center',
     marginBottom: 20,
   },

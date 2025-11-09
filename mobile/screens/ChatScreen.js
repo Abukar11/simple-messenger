@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { ACCENT_COLOR } from '../theme';
 import {
   View,
   Text,
@@ -11,7 +12,7 @@ import {
   Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import io from 'socket.io-client';
+// import io from 'socket.io-client';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 
@@ -27,7 +28,7 @@ const SERVER_URL = getServerUrl();
 console.log('🚀 SERVER_URL установлен:', SERVER_URL);
 
 export default function ChatScreen({ route }) {
-  const { username } = route.params;
+  const { username, room = 'main' } = route.params;
   const [messages, setMessages] = useState([]);
   const [messageText, setMessageText] = useState('');
   const [userCount, setUserCount] = useState(0);
@@ -95,8 +96,8 @@ export default function ChatScreen({ route }) {
         setErrorMessage(''); // Очищаем ошибки
         retryCount = 0; // Сбрасываем счётчик
 
-        // Сообщаем серверу о входе пользователя
-        socketRef.current.emit('userJoin', username);
+        // Сообщаем серверу о входе в комнату
+        socketRef.current.emit('joinRoom', { username, room });
       });
 
       // Обработка ошибок подключения
@@ -208,7 +209,7 @@ export default function ChatScreen({ route }) {
         socketRef.current.disconnect();
       }
     };
-  }, [username]);
+  }, [username, room]);
 
   // Автоскролл к последнему сообщению (более консервативный)
   useEffect(() => {
@@ -220,7 +221,7 @@ export default function ChatScreen({ route }) {
     }
   }, [messages]);
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (!messageText.trim() || !isConnected) return;
 
     const currentTime = new Date().toLocaleTimeString('ru-RU', {
@@ -229,11 +230,32 @@ export default function ChatScreen({ route }) {
     });
 
     // Отправляем сообщение на сервер
-    socketRef.current.emit('sendMessage', {
-      username: username,
-      text: messageText.trim(),
-      time: currentTime
-    });
+    try {
+      const res = await fetch(`${SERVER_URL}/api/message`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ room, text: messageText.trim(), type: 'text' })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessageText('');
+        // После отправки — обновляем историю
+        const res2 = await fetch(`${SERVER_URL}/api/messages?room=${room}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data2 = await res2.json();
+        if (data2.success && Array.isArray(data2.messages)) {
+          setMessages(data2.messages);
+        }
+      } else {
+        Alert.alert('Ошибка', data.error || 'Ошибка отправки сообщения');
+      }
+    } catch (e) {
+      Alert.alert('Ошибка', 'Ошибка сети или сервера');
+    }
 
     setMessageText('');
 
@@ -605,7 +627,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   statusBar: {
-    backgroundColor: '#2196F3',
+    backgroundColor: ACCENT_COLOR,
     paddingVertical: 10,
     paddingHorizontal: 15,
     flexDirection: 'row',
@@ -626,7 +648,7 @@ const styles = StyleSheet.create({
   },
   myMessage: {
     alignSelf: 'flex-end',
-    backgroundColor: '#2196F3',
+    backgroundColor: ACCENT_COLOR,
   },
   otherMessage: {
     alignSelf: 'flex-start',
@@ -692,7 +714,7 @@ const styles = StyleSheet.create({
   sendButton: {
     width: 45,
     height: 45,
-    backgroundColor: '#2196F3',
+    backgroundColor: ACCENT_COLOR,
     borderRadius: 22.5,
     justifyContent: 'center',
     alignItems: 'center',
@@ -720,7 +742,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   retryButton: {
-    backgroundColor: '#2196f3',
+    backgroundColor: ACCENT_COLOR,
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 5,
@@ -746,7 +768,7 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#e3f2fd',
     borderTopWidth: 1,
-    borderTopColor: '#2196F3',
+    borderTopColor: ACCENT_COLOR,
   },
   debugText: {
     fontSize: 12,
@@ -914,8 +936,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   voiceMessage: {
-    backgroundColor: '#e3f2fd',
-    borderColor: '#2196F3',
+    backgroundColor: '#e9f3ea',
+    borderColor: ACCENT_COLOR,
     borderWidth: 1,
     borderRadius: 15,
     padding: 10,
@@ -924,7 +946,7 @@ const styles = StyleSheet.create({
     marginVertical: 5,
   },
   voicePlayButton: {
-    backgroundColor: '#2196F3',
+    backgroundColor: ACCENT_COLOR,
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -940,6 +962,6 @@ const styles = StyleSheet.create({
   },
   voiceText: {
     fontSize: 14,
-    color: '#1976D2',
+    color: ACCENT_COLOR,
   },
 });

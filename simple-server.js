@@ -5,10 +5,10 @@ const socketIo = require('socket.io');
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+    }
 });
 
 const PORT = process.env.PORT || 3333;
@@ -19,16 +19,16 @@ let messages = [];
 
 // API маршруты
 app.get('/', (req, res) => {
-  res.json({
-    message: "Простой мессенджер - сервер работает!",
-    users: users.length,
-    messages: messages.length
-  });
+    res.json({
+        message: "Простой мессенджер - сервер работает!",
+        users: users.length,
+        messages: messages.length
+    });
 });
 
 // Главная страница чата
 app.get('/chat', (req, res) => {
-  const chatHTML = `
+    const chatHTML = `
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -59,7 +59,7 @@ app.get('/chat', (req, res) => {
             overflow: hidden;
         }
         .header {
-            background: #2196F3;
+            background: #2E7D32;
             color: white;
             padding: 20px;
             text-align: center;
@@ -85,7 +85,7 @@ app.get('/chat', (req, res) => {
         .login-screen button {
             width: 100%;
             padding: 15px;
-            background: #2196F3;
+            background: #2E7D32;
             color: white;
             border: none;
             border-radius: 10px;
@@ -117,7 +117,7 @@ app.get('/chat', (req, res) => {
         }
         .message.own {
             margin-left: auto;
-            background: #2196F3;
+            background: #2E7D32;
             color: white;
             border-radius: 18px 18px 5px 18px;
             padding: 12px 16px;
@@ -149,7 +149,7 @@ app.get('/chat', (req, res) => {
         .send-btn {
             width: 44px;
             height: 44px;
-            background: #2196F3;
+            background: #2E7D32;
             color: white;
             border: none;
             border-radius: 22px;
@@ -273,49 +273,49 @@ app.get('/chat', (req, res) => {
 </body>
 </html>
   `;
-  
-  res.send(chatHTML);
+
+    res.send(chatHTML);
 });
 
 // Socket.IO обработчики
 io.on('connection', (socket) => {
-  console.log('Пользователь подключился:', socket.id);
+    console.log('Пользователь подключился:', socket.id);
 
-  socket.on('userJoin', (username) => {
-    socket.username = username;
-    users.push({ id: socket.id, username: username });
+    socket.on('userJoin', (username) => {
+        socket.username = username;
+        users.push({ id: socket.id, username: username });
 
-    socket.emit('messageHistory', messages);
-    io.emit('userJoined', { username: username, users: users });
-    
-    console.log('Пользователей онлайн:', users.length);
-  });
+        socket.emit('messageHistory', messages);
+        io.emit('userJoined', { username: username, users: users });
 
-  socket.on('sendMessage', (messageData) => {
-    const message = {
-      text: messageData.text,
-      username: messageData.username,
-      timestamp: messageData.timestamp || new Date().toISOString()
-    };
+        console.log('Пользователей онлайн:', users.length);
+    });
 
-    messages.push(message);
-    
-    if (messages.length > 100) {
-      messages = messages.slice(-100);
-    }
+    socket.on('sendMessage', (messageData) => {
+        const message = {
+            text: messageData.text,
+            username: messageData.username,
+            timestamp: messageData.timestamp || new Date().toISOString()
+        };
 
-    io.emit('newMessage', message);
-  });
+        messages.push(message);
 
-  socket.on('disconnect', () => {
-    if (socket.username) {
-      users = users.filter(user => user.id !== socket.id);
-      io.emit('userLeft', { username: socket.username, users: users });
-    }
-  });
+        if (messages.length > 100) {
+            messages = messages.slice(-100);
+        }
+
+        io.emit('newMessage', message);
+    });
+
+    socket.on('disconnect', () => {
+        if (socket.username) {
+            users = users.filter(user => user.id !== socket.id);
+            io.emit('userLeft', { username: socket.username, users: users });
+        }
+    });
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log('Сервер запущен на порту:', PORT);
-  console.log('Локально: http://localhost:' + PORT + '/chat');
+    console.log('Сервер запущен на порту:', PORT);
+    console.log('Локально: http://localhost:' + PORT + '/chat');
 });
