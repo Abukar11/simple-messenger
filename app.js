@@ -37,11 +37,15 @@ app.get('/', (req, res) => {
 <title>Raven</title>
 <style>
 :root{--accent:#7C3AED;--gradient:#A78BFA;--bg:#0F0F0F;--card:#1A1A1A;--card-light:#252525;--border:#2A2A2A;--text:#E5E5E5;--text-dim:#A0A0A0}
+body.light-theme{--accent:#7C3AED;--gradient:#A78BFA;--bg:#F5F5F5;--card:#FFFFFF;--card-light:#FAFAFA;--border:#E5E5E5;--text:#1A1A1A;--text-dim:#666666}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;background:var(--bg);min-height:100vh;display:flex;align-items:center;justify-content:center}
-.app{width:100%;max-width:800px;height:90vh;background:var(--card);border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,0.5);overflow:hidden;display:flex;flex-direction:column;border:1px solid var(--border)}
-.header{background:linear-gradient(135deg,var(--accent),var(--gradient));color:white;padding:20px;text-align:center;box-shadow:0 2px 20px rgba(124,58,237,0.3)}
+body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;background:var(--bg);min-height:100vh;display:flex;align-items:center;justify-content:center;transition:background 0.3s}
+.app{width:100%;max-width:800px;height:90vh;background:var(--card);border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,0.5);overflow:hidden;display:flex;flex-direction:column;border:1px solid var(--border);transition:all 0.3s}
+body.light-theme .app{box-shadow:0 20px 40px rgba(0,0,0,0.1)}
+.header{background:linear-gradient(135deg,var(--accent),var(--gradient));color:white;padding:20px;text-align:center;box-shadow:0 2px 20px rgba(124,58,237,0.3);position:relative}
 .header h1{font-size:24px}
+.theme-toggle{position:absolute;right:20px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:none;width:40px;height:40px;border-radius:50%;cursor:pointer;font-size:20px;transition:all 0.2s;backdrop-filter:blur(10px)}
+.theme-toggle:hover{background:rgba(255,255,255,0.3);transform:translateY(-50%) scale(1.1)}
 .status{background:var(--card-light);padding:10px 20px;text-align:center;color:var(--text-dim);font-size:14px;border-bottom:1px solid var(--border)}
 .messages{flex:1;padding:20px;overflow-y:auto;background:var(--bg)}
 .message{margin-bottom:15px;padding:12px 16px;border-radius:18px;max-width:70%;word-wrap:break-word;animation:fadeIn 0.3s}
@@ -92,7 +96,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;bac
 </div>
 </div>
 <div class="app" id="chat-screen" style="display:none">
-<div class="header"><h1>Raven</h1></div>
+<div class="header">
+<h1>Raven</h1>
+<button class="theme-toggle" onclick="toggleTheme()" title="Сменить тему">🌓</button>
+</div>
 <div class="status" id="status">Подключение...</div>
 <div class="messages" id="messages"></div>
 <div class="typing" id="typing"></div>
@@ -189,6 +196,14 @@ if(e.key==='Enter')sendMsg();
 if(socket)socket.emit('typing',currentUser);
 });
 document.getElementById('username').addEventListener('keypress',e=>{if(e.key==='Enter')login()});
+function toggleTheme(){
+const body=document.body;
+body.classList.toggle('light-theme');
+localStorage.setItem('theme',body.classList.contains('light-theme')?'light':'dark');
+}
+if(localStorage.getItem('theme')==='light'){
+document.body.classList.add('light-theme');
+}
 </script>
 </body>
 </html>`;
