@@ -102,7 +102,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;bac
 </div>
 <script src="/socket.io/socket.io.js"></script>
 <script>
-let socket,currentUser='',mediaRec,audioChunks=[],isRec=false;
+let socket,currentUser='',mediaRec,audioChunks=[],isRec=false,recStartTime=0;
 function login(){
 const u=document.getElementById('username').value.trim();
 if(u){
@@ -124,7 +124,8 @@ el.className='message '+(m.user===currentUser?'my':'other');
 const t=new Date(m.timestamp).toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
 let c='<div class="msg-user">'+esc(m.user)+'</div><div class="msg-text">'+esc(m.text||'')+'</div>';
 if(m.type==='voice'&&m.audioUrl){
-c+='<div class="voice-msg"><button class="voice-play" onclick="playVoice(\\''+m.audioUrl+'\\')">▶</button><span class="voice-duration">'+(m.duration||'0:00')+'</span></div>';
+const audioId='audio_'+Date.now()+'_'+Math.random().toString(36).substr(2,9);
+c+='<div class="voice-msg"><button class="voice-play" id="'+audioId+'" onclick="playVoice(this,\\''+m.audioUrl+'\\')">▶</button><span class="voice-duration">'+(m.duration||'0:00')+'</span></div>';
 }
 c+='<div class="msg-time">'+t+'</div>';
 el.innerHTML=c;div.appendChild(el);div.scrollTop=div.scrollHeight;
@@ -138,20 +139,41 @@ const btn=document.getElementById('voice-btn');
 if(!isRec){
 try{
 const stream=await navigator.mediaDevices.getUserMedia({audio:true});
-mediaRec=new MediaRecorder(stream);audioChunks=[];
-mediaRec.ondataavailable=e=>audioChunks.push(e.data);
-mediaRec.onstop=async()=>{
-const blob=new Blob(audioChunks,{type:'audio/webm'}),reader=new FileReader();
+mediaRec=new MediaRecorder(stream,{mimeType:'audio/webm'});
+audioChunks=[];
+recStartTime=Date.now();
+mediaRec.ondataavailable=e=>{if(e.data.size>0)audioChunks.push(e.data)};
+mediaRec.onstop=()=>{
+const duration=Math.floor((Date.now()-recStartTime)/1000);
+const durStr=Math.floor(duration/60)+':'+String(duration%60).padStart(2,'0');
+const blob=new Blob(audioChunks,{type:'audio/webm'});
+const reader=new FileReader();
 reader.onloadend=()=>{
-socket.emit('send',{type:'voice',audioUrl:reader.result,duration:'0:'+Math.floor(audioChunks.length/10).toString().padStart(2,'0')});
+socket.emit('send',{type:'voice',audioUrl:reader.result,duration:durStr});
 };
-reader.readAsDataURL(blob);stream.getTracks().forEach(t=>t.stop());
+reader.readAsDataURL(blob);
+stream.getTracks().forEach(t=>t.stop());
 };
-mediaRec.start();isRec=true;btn.classList.add('recording');btn.textContent='⏹️';
+mediaRec.start();
+isRec=true;
+btn.classList.add('recording');
+btn.textContent='⏹️';
 }catch(err){alert('Ошибка микрофона: '+err.message)}
-}else{mediaRec.stop();isRec=false;btn.classList.remove('recording');btn.textContent='🎤';}
+}else{
+mediaRec.stop();
+isRec=false;
+btn.classList.remove('recording');
+btn.textContent='🎤';
 }
-function playVoice(url){new Audio(url).play()}
+}
+function playVoice(btn,url){
+const audio=new Audio(url);
+btn.textContent='⏸️';
+btn.disabled=true;
+audio.onended=()=>{btn.textContent='▶';btn.disabled=false};
+audio.onerror=()=>{alert('Ошибка воспроизведения');btn.textContent='▶';btn.disabled=false};
+audio.play().catch(e=>{alert('Не удалось воспроизвести: '+e.message);btn.textContent='▶';btn.disabled=false});
+}
 function showTyping(u){
 const c=document.getElementById('typing');
 c.innerHTML=u+' печатает<span class="typing-dots"><span></span><span></span><span></span></span>';
