@@ -5,22 +5,128 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server, { cors: { origin: "*", methods: ["GET","POST"] } });
-const PORT = process.env.PORT || 3000;
+const io = socketIo(server);
+
+const PORT = process.env.PORT || 8082;
 
 let messages = [];
-let users = [];
+let users = new Map();
 
-app.use(express.json());
-app.use((req,res,next)=>{res.set('Cache-Control','no-cache');res.set('Pragma','no-cache');res.set('Expires','0');next();});
+app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
 
-app.get('/api/status',(req,res)=>res.json({message:'Мессенджер работает!',users:users.length,messages:messages.length,timestamp:new Date().toISOString()}));
+app.get('/api/status', (req, res) => {
+  res.json({
+    message: 'Server is running',
+    users: Array.from(users.values()),
+    messages: messages.length,
+    timestamp: new Date().toISOString()
+  });
+});
 
-app.get('/',(req,res)=>res.type('html').send(\`<!DOCTYPE html>
-<html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Raven Chat</title><script src="/socket.io/socket.io.js"></script><style>body{margin:0;font-family:sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;display:flex;align-items:center;justify-content:center}.app{width:100%;max-width:800px;height:90vh;background:#fff;border-radius:20px;box-shadow:0 20px 40px rgba(0,0,0,.12);overflow:hidden;display:flex;flex-direction:column}.header{background:#2E7D32;color:#fff;padding:16px 20px}.status{padding:8px 16px;background:#f7f7f7;color:#666}.messages{flex:1;overflow:auto;padding:16px;background:#fafafa}.message{margin:10px 0;padding:12px 14px;border-radius:16px;max-width:75%}.message.my{margin-left:auto;background:#2E7D32;color:#fff}.message.other{background:#fff;border:1px solid #e9e9e9}.username{font-size:12px;opacity:.8;margin-bottom:4px}.time{font-size:11px;opacity:.7;margin-top:6px}.input-area{display:flex;gap:8px;align-items:center;padding:12px;border-top:1px solid #eee;background:#fff}.input{flex:1;padding:12px 14px;border:2px solid #e0e0e0;border-radius:24px;font-size:16px;outline:none}.input:focus{border-color:#2E7D32}.emoji{width:40px;height:40px;border:none;background:#f0f0f0;border-radius:50%;cursor:pointer}.send{width:48px;height:48px;border:none;border-radius:50%;background:#2E7D32;color:#fff;font-size:18px;cursor:pointer}.login{max-width:420px;margin:0 auto;text-align:center;padding:40px}.login input{width:100%;padding:14px 16px;border:2px solid #e0e0e0;border-radius:24px;font-size:18px;margin:16px 0}.login button{width:100%;padding:14px 16px;border:none;border-radius:24px;background:#2E7D32;color:#fff;font-size:18px;cursor:pointer}</style></head><body><div id="app"></div><script>const socket=io();let me='',connected=!1,userCount=0,list=[];function color(n){const c=['#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFEAA7','#DDA0DD','#98D8C8','#F7DC6F'];let h=0;for(let i=0;i<n.length;i++)h=n.charCodeAt(i)+((h<<5)-h);return c[Math.abs(h)%c.length]}function render(){const r=document.getElementById('app');if(!me)r.innerHTML=\\\`<div class="app"><div class="login"><h1>��‍⬛ Raven Chat</h1><p style="color:#666">Введите имя</p><input id="name" placeholder="Ваше имя" maxlength="20" onkeypress="onLoginKey(event)"/><div style="font-size:14px;color:#999">\\\${connected?'🟢 Подключено':'🔴 Подключение...'}</div><button onclick="login()">Войти</button></div></div>\\\`;else{r.innerHTML=\\\`<div class="app"><div class="header"><b>Raven Chat</b><div style="opacity:.9">Добро пожаловать, \\\${me}</div></div><div class="status">\\\${connected?\\\`🟢 Онлайн • \\\${userCount} человек\\\`:'🔴 Соединение...'}</div><div class="messages" id="msgs">\\\${list.map(m=>\\\`<div class="message \\\${m.username===me?'my':'other'}">\\\${m.username!==me?'<div class="username" style="color:'+color(m.username)+'">'+m.username+'</div>':''}<div>\\\${m.text}</div><div class="time">\\\${m.time}</div></div>\\\`).join('')}</div><div class="input-area"><button class="emoji" onclick="addEmoji('😊')">😊</button><button class="emoji" onclick="addEmoji('😂')">😂</button><button class="emoji" onclick="addEmoji('❤️')">❤️</button><input id="msg" class="input" placeholder="Сообщение..." maxlength="500" onkeypress="onSendKey(event)"/><button class="send" onclick="send()">➤</button></div></div>\\\`;const e=document.getElementById('msgs');if(e)e.scrollTop=e.scrollHeight}}function onLoginKey(e){if(e.key==='Enter')login()}function login(){const v=document.getElementById('name').value.trim();if(!v)return;me=v;socket.emit('join',v);render()}function onSendKey(e){if(e.key==='Enter')send()}function send(){const i=document.getElementById('msg');const t=i?.value.trim();if(!t||!connected)return;socket.emit('send',{username:me,text:t});i.value=''}function addEmoji(e){const i=document.getElementById('msg');if(i){i.value+=e;i.focus()}}socket.on('connect',()=>{connected=!0;render()});socket.on('disconnect',()=>{connected=!1;render()});socket.on('history',h=>{list=h;render()});socket.on('new',m=>{list.push(m);render()});socket.on('stats',d=>{userCount=d.users;render()});render()</script></body></html>\`));
+app.get('/', (req, res) => {
+  res.send(`<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raven Chat</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        #app { width: 100%; max-width: 500px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); overflow: hidden; }
+        #login-screen { padding: 40px; text-align: center; }
+        #login-screen h1 { color: #2E7D32; margin-bottom: 30px; font-size: 32px; }
+        #login-screen input { width: 100%; padding: 15px; border: 2px solid #E0E0E0; border-radius: 8px; font-size: 16px; margin-bottom: 20px; }
+        #login-screen button { width: 100%; padding: 15px; background: #2E7D32; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        #chat-screen { display: none; height: 600px; flex-direction: column; }
+        #chat-header { background: #2E7D32; color: white; padding: 20px; text-align: center; }
+        #messages { flex: 1; padding: 20px; overflow-y: auto; background: #F5F5F5; }
+        .message { margin-bottom: 15px; padding: 12px 16px; background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .message strong { color: #2E7D32; }
+        #input-area { display: flex; padding: 20px; background: white; border-top: 1px solid #E0E0E0; }
+        #message-input { flex: 1; padding: 12px; border: 2px solid #E0E0E0; border-radius: 8px; font-size: 14px; }
+        #send-button { margin-left: 10px; padding: 12px 24px; background: #2E7D32; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="login-screen">
+            <h1>🐦 Raven Chat</h1>
+            <input type="text" id="username" placeholder="Введите ваше имя" />
+            <button onclick="login()">Войти</button>
+        </div>
+        <div id="chat-screen">
+            <div id="chat-header"><h2>Raven Chat</h2></div>
+            <div id="messages"></div>
+            <div id="input-area">
+                <input type="text" id="message-input" placeholder="Сообщение..." />
+                <button id="send-button" onclick="sendMessage()">Отправить</button>
+            </div>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        let socket;
+        let currentUser = '';
+        function login() {
+            const username = document.getElementById('username').value.trim();
+            if (username) {
+                currentUser = username;
+                socket = io();
+                socket.emit('join', username);
+                socket.on('message', (data) => {
+                    const messagesDiv = document.getElementById('messages');
+                    const messageEl = document.createElement('div');
+                    messageEl.className = 'message';
+                    messageEl.innerHTML = '<strong>' + data.user + ':</strong> ' + data.text;
+                    messagesDiv.appendChild(messageEl);
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                });
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('chat-screen').style.display = 'flex';
+            }
+        }
+        function sendMessage() {
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+            if (text && socket) {
+                socket.emit('send', text);
+                input.value = '';
+            }
+        }
+        document.getElementById('message-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+</html>`);
+});
 
-app.use(express.static(path.join(__dirname,'public'),{index:false}));
+io.on('connection', (socket) => {
+  console.log('New connection:', socket.id);
 
-io.on('connection',socket=>{socket.emit('history',messages);io.emit('stats',{users:users.length});socket.on('join',name=>{socket.username=name;users.push(name);io.emit('stats',{users:users.length})});socket.on('send',data=>{const msg={id:Date.now(),username:data.username,text:data.text,time:new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})};messages.push(msg);if(messages.length>200)messages=messages.slice(-200);io.emit('new',msg)});socket.on('disconnect',()=>{if(socket.username){users=users.filter(u=>u!==socket.username);io.emit('stats',{users:users.length})}})});
+  socket.on('join', (username) => {
+    users.set(socket.id, username);
+    messages.forEach(msg => socket.emit('message', msg));
+  });
 
-server.listen(PORT,'0.0.0.0',()=>console.log('Listening on',PORT));
+  socket.on('send', (text) => {
+    const username = users.get(socket.id) || 'Anonymous';
+    const message = { user: username, text, timestamp: Date.now() };
+    messages.push(message);
+    io.emit('message', message);
+  });
+
+  socket.on('disconnect', () => {
+    users.delete(socket.id);
+  });
+});
+
+server.listen(PORT, () => {
+  console.log('Server running on port ' + PORT);
+});
