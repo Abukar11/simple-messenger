@@ -34,7 +34,7 @@ app.get('/', (req, res) => {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Raven Chat</title>
+<title>Raven</title>
 <style>
 :root{--accent:#2E7D32;--gradient:#60AD66;--bg:#fafafa;--border:#e0e0e0}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -83,13 +83,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;bac
 <div id="app">
 <div class="app" id="login-screen">
 <div class="login">
-<h1>🐦 Raven Chat</h1>
+<h1>🐦 Raven</h1>
 <input type="text" id="username" class="login-input" placeholder="Введите ваше имя">
 <button class="login-btn" onclick="login()">Войти в чат</button>
 </div>
 </div>
 <div class="app" id="chat-screen" style="display:none">
-<div class="header"><h1>Raven Chat</h1></div>
+<div class="header"><h1>Raven</h1></div>
 <div class="status" id="status">Подключение...</div>
 <div class="messages" id="messages"></div>
 <div class="typing" id="typing"></div>
@@ -225,5 +225,5 @@ io.on('connection', (socket) => {
 });
 
 server.listen(PORT, () => {
-  console.log('Server running on port ' + PORT);
+  console.log('Raven server running on port ' + PORT);
 });
