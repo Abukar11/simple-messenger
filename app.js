@@ -147,7 +147,8 @@ app.get('/', (req, res) => {
 body.light-theme{--accent:#7C3AED;--gradient:#A78BFA;--bg:#F5F5F5;--card:#FFFFFF;--card-light:#FAFAFA;--border:#E5E5E5;--text:#1A1A1A;--text-dim:#666666}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;background:var(--bg);min-height:100vh;display:flex;align-items:center;justify-content:center;transition:background 0.3s}
-.app{width:100%;max-width:800px;height:90vh;background:var(--card);border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,0.9);overflow:hidden;display:flex;flex-direction:column;border:1px solid var(--border);transition:all 0.3s}
+.app{width:100%;max-width:1000px;height:90vh;background:var(--card);border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,0.9);overflow:hidden;display:flex;flex-direction:row;border:1px solid var(--border);transition:all 0.3s}
+.chat-main{flex:1;display:flex;flex-direction:column;min-width:0}
 body.light-theme .app{box-shadow:0 20px 40px rgba(0,0,0,0.1)}
 .header{background:linear-gradient(135deg,var(--accent),var(--gradient));color:white;padding:20px;text-align:center;box-shadow:0 2px 20px rgba(0,0,0,0.5);position:relative}
 body.light-theme .header{box-shadow:0 2px 20px rgba(124,58,237,0.3)}
@@ -214,7 +215,13 @@ body.light-theme .typing-dots span{background:var(--accent)}
 @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes bounce{0%,80%,100%{transform:scale(0.8);opacity:0.5}40%{transform:scale(1);opacity:1}}
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
-@media (max-width:768px){.app{height:100vh;border-radius:0}.message{max-width:85%}}
+.users-sidebar{width:240px;background:var(--card-light);border-left:1px solid var(--border);padding:20px;overflow-y:auto}
+.users-title{font-size:14px;font-weight:bold;color:var(--text);margin-bottom:15px;text-transform:uppercase;letter-spacing:1px}
+.user-item{padding:10px;background:var(--card);border-radius:8px;margin-bottom:8px;color:var(--text);font-size:14px;display:flex;align-items:center;gap:8px;transition:all 0.2s}
+.user-item:hover{background:rgba(255,255,255,0.05);transform:translateX(-2px)}
+body.light-theme .user-item:hover{background:rgba(124,58,237,0.1)}
+.user-dot{width:8px;height:8px;background:#10B981;border-radius:50%;box-shadow:0 0 8px rgba(16,185,129,0.5)}
+@media (max-width:768px){.app{height:100vh;border-radius:0;flex-direction:column}.users-sidebar{display:none}.message{max-width:85%}}
 </style>
 </head>
 <body>
@@ -232,6 +239,7 @@ body.light-theme .typing-dots span{background:var(--accent)}
 </div>
 </div>
 <div class="app" id="chat-screen" style="display:none">
+<div class="chat-main">
 <div class="header">
 <svg class="raven-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
 <path d="M50 15 Q45 12 40 15 L35 20 L30 18 L28 22 Q25 25 25 30 L22 35 Q20 40 22 45 L20 50 Q18 55 20 60 L25 70 Q30 75 35 78 L40 82 Q45 85 50 87 Q55 85 60 82 L65 78 Q70 75 75 70 L80 60 Q82 55 80 50 L78 45 Q80 40 78 35 L75 30 Q75 25 72 22 L70 18 L65 20 L60 15 Q55 12 50 15 Z M45 30 Q43 28 45 26 Q47 24 49 26 Q51 28 49 30 Q47 32 45 30 Z" fill="white"/>
@@ -247,6 +255,11 @@ body.light-theme .typing-dots span{background:var(--accent)}
 <button class="voice-btn" id="voice-btn" onclick="toggleVoice()">🎤</button>
 <input type="text" id="msg-input" class="input-field" placeholder="Сообщение...">
 <button class="send-btn" onclick="sendMsg()">▶</button>
+</div>
+</div>
+<div class="users-sidebar">
+<div class="users-title">👥 Онлайн (<span id="users-count">0</span>)</div>
+<div id="users-list"></div>
 </div>
 </div>
 </div>
@@ -266,6 +279,7 @@ document.getElementById('login-screen').style.display='none';
 document.getElementById('chat-screen').style.display='flex';
 });
 socket.on('status',d=>document.getElementById('status').textContent='👥 Онлайн: '+d.online+' | 💬 Сообщений: '+d.messages);
+socket.on('users_list',users=>updateUsersList(users));
 socket.on('history',msgs=>msgs.forEach(m=>showMsg(m)));
 socket.on('message',m=>showMsg(m));
 socket.on('message_deleted',id=>{const el=document.getElementById('msg_'+id);if(el)el.remove()});
@@ -371,6 +385,18 @@ if(confirm('Удалить это сообщение?')){
 socket.emit('delete_message',id);
 }
 }
+function updateUsersList(users){
+const list=document.getElementById('users-list');
+const count=document.getElementById('users-count');
+count.textContent=users.length;
+list.innerHTML='';
+users.forEach(u=>{
+const item=document.createElement('div');
+item.className='user-item';
+item.innerHTML='<span class="user-dot"></span>'+esc(u);
+list.appendChild(item);
+});
+}
 function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
 document.getElementById('msg-input').addEventListener('keypress',e=>{
 if(e.key==='Enter')sendMsg();
@@ -402,6 +428,8 @@ io.on('connection', (socket) => {
             online: users.size,
             messages: messages.length
         });
+
+        io.emit('users_list', Array.from(users.values()));
 
         socket.emit('history', messages.slice(-50));
     });
@@ -475,6 +503,8 @@ io.on('connection', (socket) => {
             online: users.size,
             messages: messages.length
         });
+
+        io.emit('users_list', Array.from(users.values()));
     });
 });
 
