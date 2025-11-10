@@ -40,6 +40,10 @@ app.get('/sitemap.xml', (req, res) => {
 </urlset>`);
 });
 
+app.get('/yandex_40285b87b9850f1b.html', (req, res) => {
+    res.send('<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body>Verification: 40285b87b9850f1b</body></html>');
+});
+
 app.get('/api/status', (req, res) => {
     res.json({
         message: 'Server is running',
@@ -55,6 +59,7 @@ app.get('/', (req, res) => {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="yandex-verification" content="40285b87b9850f1b" />
 <title>Raven - Бесплатный онлайн мессенджер</title>
 <meta name="description" content="Raven - современный веб-мессенджер с голосовыми сообщениями. Общайтесь онлайн бесплатно, без регистрации. Поддержка темной и светлой темы.">
 <meta name="keywords" content="мессенджер, чат, онлайн общение, голосовые сообщения, raven, бесплатный чат, веб-мессенджер">
