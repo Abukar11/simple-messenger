@@ -107,9 +107,9 @@ body.light-theme .typing-dots span{background:var(--accent)}
 <div class="app" id="login-screen">
 <div class="login">
 <svg class="raven-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-<path d="M50 20 L65 35 L80 30 L70 45 L85 55 L70 60 L75 75 L60 70 L50 85 L40 70 L25 75 L30 60 L15 55 L30 45 L20 30 L35 35 Z" fill="currentColor"/>
-<circle cx="45" cy="45" r="3" fill="currentColor"/>
-<path d="M50 50 L55 55 L50 60 L45 55 Z" fill="currentColor"/>
+<path d="M50 15 Q45 12 40 15 L35 20 L30 18 L28 22 Q25 25 25 30 L22 35 Q20 40 22 45 L20 50 Q18 55 20 60 L25 70 Q30 75 35 78 L40 82 Q45 85 50 87 Q55 85 60 82 L65 78 Q70 75 75 70 L80 60 Q82 55 80 50 L78 45 Q80 40 78 35 L75 30 Q75 25 72 22 L70 18 L65 20 L60 15 Q55 12 50 15 Z M45 30 Q43 28 45 26 Q47 24 49 26 Q51 28 49 30 Q47 32 45 30 Z" fill="currentColor"/>
+<ellipse cx="45" cy="28" rx="2" ry="3" fill="var(--bg)"/>
+<path d="M50 35 Q48 37 46 35 L44 38 Q46 42 50 43 Q54 42 56 38 L54 35 Q52 37 50 35 Z" fill="var(--bg)" opacity="0.3"/>
 </svg>
 <h1>Raven</h1>
 <input type="text" id="username" class="login-input" placeholder="Введите ваше имя">
@@ -119,9 +119,8 @@ body.light-theme .typing-dots span{background:var(--accent)}
 <div class="app" id="chat-screen" style="display:none">
 <div class="header">
 <svg class="raven-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-<path d="M50 20 L65 35 L80 30 L70 45 L85 55 L70 60 L75 75 L60 70 L50 85 L40 70 L25 75 L30 60 L15 55 L30 45 L20 30 L35 35 Z" fill="white"/>
-<circle cx="45" cy="45" r="3" fill="white"/>
-<path d="M50 50 L55 55 L50 60 L45 55 Z" fill="white"/>
+<path d="M50 15 Q45 12 40 15 L35 20 L30 18 L28 22 Q25 25 25 30 L22 35 Q20 40 22 45 L20 50 Q18 55 20 60 L25 70 Q30 75 35 78 L40 82 Q45 85 50 87 Q55 85 60 82 L65 78 Q70 75 75 70 L80 60 Q82 55 80 50 L78 45 Q80 40 78 35 L75 30 Q75 25 72 22 L70 18 L65 20 L60 15 Q55 12 50 15 Z M45 30 Q43 28 45 26 Q47 24 49 26 Q51 28 49 30 Q47 32 45 30 Z" fill="white"/>
+<ellipse cx="45" cy="28" rx="2" ry="3" fill="rgba(0,0,0,0.3)"/>
 </svg>
 <h1>Raven</h1>
 <button class="theme-toggle" onclick="toggleTheme()" title="Сменить тему">🌓</button>
