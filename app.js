@@ -11,25 +11,26 @@ const PORT = process.env.PORT || 8082;
 
 let messages = [];
 let users = new Map();
+let messageIdCounter = 1;
 
 app.use((req, res, next) => {
-  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
-  next();
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    next();
 });
 
 app.get('/api/status', (req, res) => {
-  res.json({
-    message: 'Server is running',
-    users: Array.from(users.values()),
-    messages: messages.length,
-    timestamp: new Date().toISOString()
-  });
+    res.json({
+        message: 'Server is running',
+        users: Array.from(users.values()),
+        messages: messages.length,
+        timestamp: new Date().toISOString()
+    });
 });
 
 app.get('/', (req, res) => {
-  const html = `<!DOCTYPE html>
+    const html = `<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -49,8 +50,11 @@ body.light-theme .header{box-shadow:0 2px 20px rgba(124,58,237,0.3)}
 .theme-toggle:hover{background:rgba(255,255,255,0.25);transform:translateY(-50%) scale(1.1)}
 .status{background:var(--card-light);padding:10px 20px;text-align:center;color:var(--text-dim);font-size:14px;border-bottom:1px solid var(--border)}
 .messages{flex:1;padding:20px;overflow-y:auto;background:var(--bg)}
-.message{margin-bottom:15px;padding:12px 16px;border-radius:18px;max-width:70%;word-wrap:break-word;animation:fadeIn 0.3s}
-.message.my{background:linear-gradient(135deg,var(--accent),var(--gradient));color:white;margin-left:auto;box-shadow:0 4px 12px rgba(0,0,0,0.6)}
+.message{margin-bottom:15px;padding:12px 16px;border-radius:18px;max-width:70%;word-wrap:break-word;animation:fadeIn 0.3s;position:relative}
+.message.my{background:var(--text);color:var(--bg);margin-left:auto;border:1px solid rgba(255,255,255,0.1)}
+.delete-btn{position:absolute;top:8px;right:8px;background:rgba(220,38,38,0.9);color:white;border:none;border-radius:50%;width:24px;height:24px;font-size:14px;cursor:pointer;opacity:0;transition:all 0.2s;display:flex;align-items:center;justify-content:center}
+.message.my:hover .delete-btn{opacity:1}
+.delete-btn:hover{background:#DC2626;transform:scale(1.1)}
 body.light-theme .message.my{box-shadow:0 4px 12px rgba(124,58,237,0.3)}
 .message.other{background:var(--card-light);border:1px solid var(--border);color:var(--text)}
 .msg-user{font-size:12px;font-weight:bold;margin-bottom:5px;opacity:0.8}
@@ -150,12 +154,14 @@ document.getElementById('chat-screen').style.display='flex';
 socket.on('status',d=>document.getElementById('status').textContent='👥 Онлайн: '+d.online+' | 💬 Сообщений: '+d.messages);
 socket.on('history',msgs=>msgs.forEach(m=>showMsg(m)));
 socket.on('message',m=>showMsg(m));
+socket.on('message_deleted',id=>{const el=document.getElementById('msg_'+id);if(el)el.remove()});
 socket.on('user_typing',d=>{if(d.username!==currentUser)showTyping(d.username)});
 }
 }
 function showMsg(m){
 const div=document.getElementById('messages'),el=document.createElement('div');
 el.className='message '+(m.user===currentUser?'my':'other');
+el.id='msg_'+m.id;
 const t=new Date(m.timestamp).toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
 let c='<div class="msg-user">'+esc(m.user)+'</div><div class="msg-text">'+esc(m.text||'')+'</div>';
 if(m.type==='voice'&&m.audioUrl){
@@ -163,6 +169,9 @@ const audioId='audio_'+Date.now()+'_'+Math.random().toString(36).substr(2,9);
 c+='<div class="voice-msg"><button class="voice-play" id="'+audioId+'" onclick="playVoice(this,\\''+m.audioUrl+'\\')">▶</button><span class="voice-duration">'+(m.duration||'0:00')+'</span></div>';
 }
 c+='<div class="msg-time">'+t+'</div>';
+if(m.user===currentUser){
+c+='<button class="delete-btn" onclick="deleteMsg('+m.id+')" title="Удалить">✕</button>';
+}
 el.innerHTML=c;div.appendChild(el);div.scrollTop=div.scrollHeight;
 }
 function sendMsg(){
@@ -215,6 +224,11 @@ c.innerHTML=u+' печатает<span class="typing-dots"><span></span><span></s
 c.classList.add('show');
 setTimeout(()=>c.classList.remove('show'),3000);
 }
+function deleteMsg(id){
+if(confirm('Удалить это сообщение?')){
+socket.emit('delete_message',id);
+}
+}
 function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
 document.getElementById('msg-input').addEventListener('keypress',e=>{
 if(e.key==='Enter')sendMsg();
@@ -232,63 +246,81 @@ document.body.classList.add('light-theme');
 </script>
 </body>
 </html>`;
-  res.send(html);
+    res.send(html);
 });
 
 io.on('connection', (socket) => {
-  console.log('Connected:', socket.id);
+    console.log('Connected:', socket.id);
 
-  socket.on('join', (username) => {
-    users.set(socket.id, username);
-    console.log(username + ' joined. Total: ' + users.size);
-    
-    io.emit('status', {
-      online: users.size,
-      messages: messages.length
+    socket.on('join', (username) => {
+        users.set(socket.id, username);
+        console.log(username + ' joined. Total: ' + users.size);
+
+        io.emit('status', {
+            online: users.size,
+            messages: messages.length
+        });
+
+        socket.emit('history', messages.slice(-50));
     });
-    
-    socket.emit('history', messages.slice(-50));
-  });
 
-  socket.on('send', (data) => {
-    const username = users.get(socket.id) || 'Anonymous';
-    const msg = {
-      user: username,
-      text: data.text || '',
-      type: data.type || 'text',
-      audioUrl: data.audioUrl || null,
-      duration: data.duration || null,
-      timestamp: new Date().toISOString()
-    };
-    
-    messages.push(msg);
-    if (messages.length > 100) {
-      messages = messages.slice(-100);
-    }
-    
-    io.emit('message', msg);
-    io.emit('status', {
-      online: users.size,
-      messages: messages.length
+    socket.on('send', (data) => {
+        const username = users.get(socket.id) || 'Anonymous';
+        const msg = {
+            id: messageIdCounter++,
+            user: username,
+            text: data.text || '',
+            type: data.type || 'text',
+            audioUrl: data.audioUrl || null,
+            duration: data.duration || null,
+            timestamp: new Date().toISOString()
+        };
+
+        messages.push(msg);
+        if (messages.length > 100) {
+            messages = messages.slice(-100);
+        }
+
+        io.emit('message', msg);
+        io.emit('status', {
+            online: users.size,
+            messages: messages.length
+        });
     });
-  });
 
-  socket.on('typing', (username) => {
-    socket.broadcast.emit('user_typing', { username: username });
-  });
-
-  socket.on('disconnect', () => {
-    const username = users.get(socket.id);
-    users.delete(socket.id);
-    console.log((username || 'User') + ' disconnected. Total: ' + users.size);
-    
-    io.emit('status', {
-      online: users.size,
-      messages: messages.length
+    socket.on('delete_message', (msgId) => {
+        const msgIndex = messages.findIndex(m => m.id === msgId);
+        if (msgIndex !== -1) {
+            const msg = messages[msgIndex];
+            const username = users.get(socket.id);
+            // Можно удалить только своё сообщение
+            if (msg.user === username) {
+                messages.splice(msgIndex, 1);
+                io.emit('message_deleted', msgId);
+                io.emit('status', {
+                    online: users.size,
+                    messages: messages.length
+                });
+            }
+        }
     });
-  });
+
+    socket.on('typing', (username) => {
+        socket.broadcast.emit('user_typing', { username: username });
+    });
+
+    socket.on('disconnect', () => {
+        const username = users.get(socket.id);
+        users.delete(socket.id);
+        console.log((username || 'User') + ' disconnected. Total: ' + users.size);
+
+        io.emit('status', {
+            online: users.size,
+            messages: messages.length
+        });
+    });
 });
 
 server.listen(PORT, () => {
-  console.log('Raven server running on port ' + PORT);
+    console.log('Raven server running on port ' + PORT);
 });
