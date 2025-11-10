@@ -44,6 +44,68 @@ app.get('/yandex_40285b87b9850f1b.html', (req, res) => {
     res.send('<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body>Verification: 40285b87b9850f1b</body></html>');
 });
 
+app.get('/manifest.json', (req, res) => {
+    res.json({
+        "name": "Raven Messenger",
+        "short_name": "Raven",
+        "description": "Современный веб-мессенджер с голосовыми сообщениями",
+        "start_url": "/",
+        "display": "standalone",
+        "background_color": "#000000",
+        "theme_color": "#000000",
+        "orientation": "portrait",
+        "icons": [
+            {
+                "src": "/icon-192.png",
+                "sizes": "192x192",
+                "type": "image/png",
+                "purpose": "any maskable"
+            },
+            {
+                "src": "/icon-512.png",
+                "sizes": "512x512",
+                "type": "image/png",
+                "purpose": "any maskable"
+            }
+        ],
+        "categories": ["social", "communication"],
+        "screenshots": []
+    });
+});
+
+app.get('/sw.js', (req, res) => {
+    res.type('application/javascript');
+    res.send(`
+self.addEventListener('install', (e) => {
+    console.log('Service Worker: Installed');
+    self.skipWaiting();
+});
+
+self.addEventListener('activate', (e) => {
+    console.log('Service Worker: Activated');
+    return self.clients.claim();
+});
+
+self.addEventListener('fetch', (e) => {
+    e.respondWith(
+        fetch(e.request).catch(() => {
+            return new Response('Offline mode', {
+                headers: {'Content-Type': 'text/plain'}
+            });
+        })
+    );
+});
+`);
+});
+
+app.get('/icon-192.png', (req, res) => {
+    res.redirect('https://via.placeholder.com/192/000000/FFFFFF/?text=R');
+});
+
+app.get('/icon-512.png', (req, res) => {
+    res.redirect('https://via.placeholder.com/512/000000/FFFFFF/?text=R');
+});
+
 app.get('/api/status', (req, res) => {
     res.json({
         message: 'Server is running',
@@ -58,8 +120,16 @@ app.get('/', (req, res) => {
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="yandex-verification" content="40285b87b9850f1b" />
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Raven">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="theme-color" content="#000000">
 <title>Raven - Бесплатный онлайн мессенджер</title>
 <meta name="description" content="Raven - современный веб-мессенджер с голосовыми сообщениями. Общайтесь онлайн бесплатно, без регистрации. Поддержка темной и светлой темы.">
 <meta name="keywords" content="мессенджер, чат, онлайн общение, голосовые сообщения, raven, бесплатный чат, веб-мессенджер">
@@ -177,6 +247,9 @@ body.light-theme .typing-dots span{background:var(--accent)}
 </div>
 <script src="/socket.io/socket.io.js"></script>
 <script>
+if('serviceWorker'in navigator){
+navigator.serviceWorker.register('/sw.js').then(()=>console.log('SW registered')).catch(e=>console.log('SW error:',e));
+}
 let socket,currentUser='',mediaRec,audioChunks=[],isRec=false,recStartTime=0;
 function login(){
 const u=document.getElementById('username').value.trim();
