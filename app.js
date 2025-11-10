@@ -76,8 +76,11 @@ body.light-theme .voice-btn:hover{border-color:var(--accent);background:rgba(124
 body.light-theme .send-btn{background:linear-gradient(135deg,var(--accent),var(--gradient));color:white;box-shadow:0 4px 12px rgba(124,58,237,0.3)}
 body.light-theme .send-btn:hover{box-shadow:0 6px 16px rgba(124,58,237,0.4)}
 .login{max-width:400px;padding:40px;text-align:center}
+.raven-logo{width:80px;height:80px;margin:0 auto 20px;display:block;color:var(--text);filter:drop-shadow(0 4px 12px rgba(255,255,255,0.1))}
+body.light-theme .raven-logo{color:var(--accent);filter:drop-shadow(0 4px 12px rgba(124,58,237,0.2))}
 .login h1{color:var(--text);font-size:36px;margin-bottom:30px}
 body.light-theme .login h1{background:linear-gradient(135deg,var(--accent),var(--gradient));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.raven-icon{width:28px;height:28px;display:inline-block;vertical-align:middle;margin-right:10px}
 .login-input{width:100%;padding:15px 20px;border:2px solid var(--border);border-radius:25px;font-size:18px;margin:20px 0;outline:none;background:var(--card-light);color:var(--text)}
 .login-input:focus{border-color:var(--accent);background:var(--card)}
 .login-input::placeholder{color:var(--text-dim)}
@@ -103,13 +106,23 @@ body.light-theme .typing-dots span{background:var(--accent)}
 <div id="app">
 <div class="app" id="login-screen">
 <div class="login">
-<h1>🐦 Raven</h1>
+<svg class="raven-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+<path d="M50 20 L65 35 L80 30 L70 45 L85 55 L70 60 L75 75 L60 70 L50 85 L40 70 L25 75 L30 60 L15 55 L30 45 L20 30 L35 35 Z" fill="currentColor"/>
+<circle cx="45" cy="45" r="3" fill="currentColor"/>
+<path d="M50 50 L55 55 L50 60 L45 55 Z" fill="currentColor"/>
+</svg>
+<h1>Raven</h1>
 <input type="text" id="username" class="login-input" placeholder="Введите ваше имя">
 <button class="login-btn" onclick="login()">Войти в чат</button>
 </div>
 </div>
 <div class="app" id="chat-screen" style="display:none">
 <div class="header">
+<svg class="raven-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+<path d="M50 20 L65 35 L80 30 L70 45 L85 55 L70 60 L75 75 L60 70 L50 85 L40 70 L25 75 L30 60 L15 55 L30 45 L20 30 L35 35 Z" fill="white"/>
+<circle cx="45" cy="45" r="3" fill="white"/>
+<path d="M50 50 L55 55 L50 60 L45 55 Z" fill="white"/>
+</svg>
 <h1>Raven</h1>
 <button class="theme-toggle" onclick="toggleTheme()" title="Сменить тему">🌓</button>
 </div>
