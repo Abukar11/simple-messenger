@@ -158,9 +158,14 @@ body.light-theme .header{box-shadow:0 2px 20px rgba(124,58,237,0.3)}
 .messages{flex:1;padding:20px;overflow-y:auto;background:var(--bg)}
 .message{margin-bottom:15px;padding:12px 16px;border-radius:18px;max-width:70%;word-wrap:break-word;animation:fadeIn 0.3s;position:relative}
 .message.my{background:var(--text);color:var(--bg);margin-left:auto;border:1px solid rgba(255,255,255,0.1)}
-.delete-btn{position:absolute;top:8px;right:8px;background:rgba(220,38,38,0.9);color:white;border:none;border-radius:50%;width:24px;height:24px;font-size:14px;cursor:pointer;opacity:0;transition:all 0.2s;display:flex;align-items:center;justify-content:center}
-.message.my:hover .delete-btn{opacity:1}
+.msg-actions{position:absolute;top:8px;right:8px;display:flex;gap:4px;opacity:0;transition:all 0.2s}
+.message.my:hover .msg-actions{opacity:1}
+.edit-btn,.delete-btn{background:rgba(100,100,100,0.9);color:white;border:none;border-radius:50%;width:24px;height:24px;font-size:12px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center}
+.edit-btn{background:rgba(124,58,237,0.9)}
+.edit-btn:hover{background:#7C3AED;transform:scale(1.1)}
+.delete-btn{background:rgba(220,38,38,0.9)}
 .delete-btn:hover{background:#DC2626;transform:scale(1.1)}
+.msg-edited{font-size:10px;color:var(--text-dim);font-style:italic;margin-top:3px}
 body.light-theme .message.my{box-shadow:0 4px 12px rgba(124,58,237,0.3)}
 .message.other{background:var(--card-light);border:1px solid var(--border);color:var(--text)}
 .msg-user{font-size:12px;font-weight:bold;margin-bottom:5px;opacity:0.8}
@@ -264,28 +269,48 @@ socket.on('status',d=>document.getElementById('status').textContent='👥 Онл
 socket.on('history',msgs=>msgs.forEach(m=>showMsg(m)));
 socket.on('message',m=>showMsg(m));
 socket.on('message_deleted',id=>{const el=document.getElementById('msg_'+id);if(el)el.remove()});
+socket.on('message_edited',m=>showMsg(m));
 socket.on('user_typing',d=>{if(d.username!==currentUser)showTyping(d.username)});
 }
 }
 function showMsg(m){
-const div=document.getElementById('messages'),el=document.createElement('div');
+const div=document.getElementById('messages');
+let el=document.getElementById('msg_'+m.id);
+if(!el){
+el=document.createElement('div');
 el.className='message '+(m.user===currentUser?'my':'other');
 el.id='msg_'+m.id;
+div.appendChild(el);
+}
 const t=new Date(m.timestamp).toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});
 let c='<div class="msg-user">'+esc(m.user)+'</div><div class="msg-text">'+esc(m.text||'')+'</div>';
 if(m.type==='voice'&&m.audioUrl){
 const audioId='audio_'+Date.now()+'_'+Math.random().toString(36).substr(2,9);
 c+='<div class="voice-msg"><button class="voice-play" id="'+audioId+'" onclick="playVoice(this,\\''+m.audioUrl+'\\')">▶</button><span class="voice-duration">'+(m.duration||'0:00')+'</span></div>';
 }
-c+='<div class="msg-time">'+t+'</div>';
-if(m.user===currentUser){
-c+='<button class="delete-btn" onclick="deleteMsg('+m.id+')" title="Удалить">✕</button>';
+c+='<div class="msg-time">'+t;
+if(m.edited)c+=' <span class="msg-edited">(изменено)</span>';
+c+='</div>';
+if(m.user===currentUser&&m.type!=='voice'){
+c+='<div class="msg-actions"><button class="edit-btn" onclick="editMsg('+m.id+',\\''+esc(m.text||'').replace(/'/g,"\\\\'")+'\\',\\''+m.type+'\\')" title="Редактировать">✏️</button><button class="delete-btn" onclick="deleteMsg('+m.id+')" title="Удалить">✕</button></div>';
+}else if(m.user===currentUser){
+c+='<div class="msg-actions"><button class="delete-btn" onclick="deleteMsg('+m.id+')" title="Удалить">✕</button></div>';
 }
-el.innerHTML=c;div.appendChild(el);div.scrollTop=div.scrollHeight;
+el.innerHTML=c;
+if(!el.parentNode)div.appendChild(el);
+div.scrollTop=div.scrollHeight;
 }
 function sendMsg(){
 const inp=document.getElementById('msg-input'),txt=inp.value.trim();
-if(txt&&socket){socket.emit('send',{text:txt,type:'text'});inp.value='';}
+if(txt&&socket){
+if(editingMsgId){
+socket.emit('edit_message',{id:editingMsgId,text:txt});
+editingMsgId=null;
+}else{
+socket.emit('send',{text:txt,type:'text'});
+}
+inp.value='';
+}
 }
 async function toggleVoice(){
 const btn=document.getElementById('voice-btn');
@@ -332,6 +357,14 @@ const c=document.getElementById('typing');
 c.innerHTML=u+' печатает<span class="typing-dots"><span></span><span></span><span></span></span>';
 c.classList.add('show');
 setTimeout(()=>c.classList.remove('show'),3000);
+}
+let editingMsgId=null;
+function editMsg(id,text){
+editingMsgId=id;
+const inp=document.getElementById('msg-input');
+inp.value=text;
+inp.focus();
+inp.setSelectionRange(text.length,text.length);
 }
 function deleteMsg(id){
 if(confirm('Удалить это сообщение?')){
@@ -395,6 +428,21 @@ io.on('connection', (socket) => {
             online: users.size,
             messages: messages.length
         });
+    });
+
+    socket.on('edit_message', (data) => {
+        const msgIndex = messages.findIndex(m => m.id === data.id);
+        if (msgIndex !== -1) {
+            const msg = messages[msgIndex];
+            const username = users.get(socket.id);
+            // Можно редактировать только своё сообщение
+            if (msg.user === username && data.text && data.text.trim()) {
+                messages[msgIndex].text = data.text.trim();
+                messages[msgIndex].edited = true;
+                messages[msgIndex].editedAt = new Date().toISOString();
+                io.emit('message_edited', messages[msgIndex]);
+            }
+        }
     });
 
     socket.on('delete_message', (msgId) => {
