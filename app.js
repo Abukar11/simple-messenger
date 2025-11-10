@@ -20,6 +20,26 @@ app.use((req, res, next) => {
     next();
 });
 
+app.get('/robots.txt', (req, res) => {
+    res.type('text/plain');
+    res.send(`User-agent: *
+Allow: /
+Sitemap: https://simple-messenger-7x2u.onrender.com/sitemap.xml`);
+});
+
+app.get('/sitemap.xml', (req, res) => {
+    res.type('application/xml');
+    res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://simple-messenger-7x2u.onrender.com</loc>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>`);
+});
+
 app.get('/api/status', (req, res) => {
     res.json({
         message: 'Server is running',
@@ -35,7 +55,18 @@ app.get('/', (req, res) => {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Raven</title>
+<title>Raven - Бесплатный онлайн мессенджер</title>
+<meta name="description" content="Raven - современный веб-мессенджер с голосовыми сообщениями. Общайтесь онлайн бесплатно, без регистрации. Поддержка темной и светлой темы.">
+<meta name="keywords" content="мессенджер, чат, онлайн общение, голосовые сообщения, raven, бесплатный чат, веб-мессенджер">
+<meta name="author" content="Raven Chat">
+<meta property="og:title" content="Raven - Бесплатный онлайн мессенджер">
+<meta property="og:description" content="Современный веб-мессенджер с голосовыми сообщениями. Общайтесь онлайн бесплатно!">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://simple-messenger-7x2u.onrender.com">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Raven - Бесплатный онлайн мессенджер">
+<meta name="twitter:description" content="Современный веб-мессенджер с голосовыми сообщениями">
+<link rel="canonical" href="https://simple-messenger-7x2u.onrender.com">
 <style>
 :root{--accent:#000000;--gradient:#1A1A1A;--bg:#000000;--card:#0A0A0A;--card-light:#151515;--border:#222222;--text:#FFFFFF;--text-dim:#888888}
 body.light-theme{--accent:#7C3AED;--gradient:#A78BFA;--bg:#F5F5F5;--card:#FFFFFF;--card-light:#FAFAFA;--border:#E5E5E5;--text:#1A1A1A;--text-dim:#666666}
