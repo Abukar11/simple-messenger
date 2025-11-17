@@ -8,6 +8,7 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { admin } = require('./firebaseConfig');
 
 
 // Создаем приложение Express
@@ -92,6 +93,131 @@ app.post('/api/login', (req, res) => {
     res.json({ success: true, token, username: user.username });
   });
 });
+
+// ==================== FIREBASE PHONE AUTH ENDPOINTS ====================
+
+// Хранилище для кодов подтверждения (в продакшене используйте Redis)
+const verificationCodes = new Map();
+
+// API: отправка кода подтверждения на телефон
+app.post('/api/phone/send-code', async (req, res) => {
+  const { phoneNumber } = req.body;
+  
+  // Валидация номера телефона
+  if (!phoneNumber || typeof phoneNumber !== 'string') {
+    return res.status(400).json({ error: 'Номер телефона обязателен' });
+  }
+  
+  // Проверка формата (должен начинаться с +)
+  if (!phoneNumber.startsWith('+')) {
+    return res.status(400).json({ error: 'Номер должен начинаться с + и кода страны (например: +79991234567)' });
+  }
+  
+  try {
+    // Генерируем 6-значный код
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Сохраняем код с временем истечения (5 минут)
+    verificationCodes.set(phoneNumber, {
+      code,
+      expiresAt: Date.now() + 5 * 60 * 1000
+    });
+    
+    // В продакшене отправляем через Firebase
+    // await admin.auth().createCustomToken(phoneNumber);
+    
+    console.log(`📱 SMS код для ${phoneNumber}: ${code}`);
+    
+    res.json({ 
+      success: true, 
+      message: 'Код отправлен на ваш телефон',
+      // В разработке возвращаем код для тестирования
+      ...(process.env.NODE_ENV !== 'production' && { devCode: code })
+    });
+  } catch (error) {
+    console.error('Ошибка отправки кода:', error);
+    res.status(500).json({ error: 'Ошибка отправки SMS' });
+  }
+});
+
+// API: проверка кода и регистрация/вход
+app.post('/api/phone/verify-code', async (req, res) => {
+  const { phoneNumber, code, username } = req.body;
+  
+  if (!phoneNumber || !code) {
+    return res.status(400).json({ error: 'Номер телефона и код обязательны' });
+  }
+  
+  // Проверяем код
+  const stored = verificationCodes.get(phoneNumber);
+  if (!stored) {
+    return res.status(400).json({ error: 'Код не найден. Запросите новый код.' });
+  }
+  
+  if (stored.expiresAt < Date.now()) {
+    verificationCodes.delete(phoneNumber);
+    return res.status(400).json({ error: 'Код истек. Запросите новый код.' });
+  }
+  
+  if (stored.code !== code) {
+    return res.status(400).json({ error: 'Неверный код' });
+  }
+  
+  // Код верный, удаляем его
+  verificationCodes.delete(phoneNumber);
+  
+  try {
+    // Проверяем, существует ли пользователь с этим номером
+    db.get('SELECT * FROM users WHERE phone_number = ?', [phoneNumber], async (err, user) => {
+      if (err) return res.status(500).json({ error: 'Ошибка базы данных' });
+      
+      if (user) {
+        // Пользователь существует - выполняем вход
+        const token = jwt.sign({ id: user.id, username: user.username, phoneNumber: user.phone_number }, JWT_SECRET, { expiresIn: '7d' });
+        res.json({ 
+          success: true, 
+          token, 
+          username: user.username,
+          isNewUser: false
+        });
+      } else {
+        // Новый пользователь - регистрируем
+        if (!username || username.trim().length < 3) {
+          return res.status(400).json({ error: 'Имя пользователя обязательно (минимум 3 символа)' });
+        }
+        
+        // Создаем пользователя с случайным паролем (не используется)
+        const randomPassword = await bcrypt.hash(Math.random().toString(36), 10);
+        
+        db.run('INSERT INTO users (username, password, phone_number) VALUES (?, ?, ?)', 
+          [username.trim(), randomPassword, phoneNumber], 
+          function (err) {
+            if (err) {
+              if (err.message.includes('UNIQUE')) {
+                return res.status(409).json({ error: 'Это имя пользователя уже занято' });
+              }
+              return res.status(500).json({ error: 'Ошибка регистрации' });
+            }
+            
+            // Генерируем JWT
+            const token = jwt.sign({ id: this.lastID, username: username.trim(), phoneNumber }, JWT_SECRET, { expiresIn: '7d' });
+            res.json({ 
+              success: true, 
+              token, 
+              username: username.trim(),
+              isNewUser: true
+            });
+          }
+        );
+      }
+    });
+  } catch (error) {
+    console.error('Ошибка проверки кода:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+// ==================== END FIREBASE PHONE AUTH ====================
 
 // Middleware для проверки JWT
 function authMiddleware(req, res, next) {

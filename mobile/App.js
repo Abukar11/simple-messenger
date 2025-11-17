@@ -5,6 +5,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import LoginScreen from './screens/LoginScreen';
 import ChatScreen from './screens/ChatScreen';
+import PhoneAuthScreen from './screens/PhoneAuthScreen';
 
 const Stack = createStackNavigator();
 
@@ -28,6 +29,14 @@ export default function App() {
           component={LoginScreen}
           options={{
             title: 'Простой чат',
+            headerShown: true
+          }}
+        />
+        <Stack.Screen
+          name="PhoneAuth"
+          component={PhoneAuthScreen}
+          options={{
+            title: 'Вход по телефону',
             headerShown: true
           }}
         />

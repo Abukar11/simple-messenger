@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Firebase Admin Key (ВАЖНО: НЕ КОММИТИТЬ!)
+firebase-admin-key.json
+
+# Environment variables
+.env
+.env.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Database
+*.db
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/

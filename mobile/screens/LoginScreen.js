@@ -117,6 +117,14 @@ export default function LoginScreen({ navigation }) {
           </Text>
         </TouchableOpacity>
 
+        {/* Новая кнопка для входа по телефону */}
+        <TouchableOpacity
+          style={[styles.button, styles.phoneButton]}
+          onPress={() => navigation.navigate('PhoneAuth')}
+        >
+          <Text style={styles.buttonText}>📱 Войти по телефону</Text>
+        </TouchableOpacity>
+
         <Text style={styles.info}>
           Это простой мессенджер для общения{'\n'}
           Все сообщения видны всем участникам
@@ -183,5 +191,8 @@ const styles = StyleSheet.create({
     color: '#999',
     textAlign: 'center',
     lineHeight: 20,
+  },
+  phoneButton: {
+    backgroundColor: '#34C759', // Зеленый цвет для кнопки телефона
   },
 });
