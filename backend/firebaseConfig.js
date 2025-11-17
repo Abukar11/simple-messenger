@@ -2,13 +2,21 @@
 const admin = require('firebase-admin');
 const path = require('path');
 
-// Проверка наличия файла ключа
-const serviceAccountPath = path.join(__dirname, 'firebase-admin-key.json');
-
 let firebaseAdmin = null;
 
 try {
-  const serviceAccount = require(serviceAccountPath);
+  let serviceAccount;
+  
+  // В продакшене используем переменную окружения
+  if (process.env.FIREBASE_CONFIG) {
+    serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG);
+    console.log('📦 Используется FIREBASE_CONFIG из переменных окружения');
+  } else {
+    // В разработке используем файл
+    const serviceAccountPath = path.join(__dirname, 'firebase-admin-key.json');
+    serviceAccount = require(serviceAccountPath);
+    console.log('📁 Используется firebase-admin-key.json из файла');
+  }
   
   firebaseAdmin = admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
@@ -17,7 +25,8 @@ try {
   console.log('✅ Firebase Admin SDK инициализирован');
 } catch (error) {
   console.error('❌ Ошибка инициализации Firebase Admin:', error.message);
-  console.log('⚠️ Создайте файл firebase-admin-key.json согласно FIREBASE_SETUP.md');
+  console.log('⚠️ Локально: создайте firebase-admin-key.json');
+  console.log('⚠️ На Render: добавьте FIREBASE_CONFIG в Environment Variables');
 }
 
 module.exports = {
